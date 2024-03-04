@@ -13,7 +13,7 @@ cd YOLOv8_train_detection_GUI
 pip install -r requirements.txt
 ```
 # Prepare your original train dataset
-Please save the annotation file (.txt) created by labelImg or VoTT together with the paired image files in one directory.
+Please save the YOLO format's annotation file (.txt) created by labelImg or VoTT together with the paired image files in one directory.
 You do not need to split them into train and val directories or create yaml files. The process is handled automatically within the application.
 
 # Run YOLOv8 GUI application 
