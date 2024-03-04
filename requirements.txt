@@ -1,0 +1,4 @@
+customtkinter
+Pillow
+torch==2.2.1
+ultralytics
