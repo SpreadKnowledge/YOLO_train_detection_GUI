@@ -1,5 +1,5 @@
-# YOLOv8_train_detection_GUI
-You can easily run YOLOv8 train and detection with the GUI.
+# YOLO_train_detection_GUI
+You can easily run YOLOv9 and YOLOv8 train and detection with the GUI.
 
 ![GHwcFN9bUAAqcDW](https://github.com/SpreadKnowledge/YOLOv8_train_detection_GUI/assets/56751392/04b65806-57f2-4761-a8c4-9aee0623d550)
 ![GHwcF1rbwAAgG4y](https://github.com/SpreadKnowledge/YOLOv8_train_detection_GUI/assets/56751392/2fd83591-ab3c-467c-8606-d3f5a8d81c28)
