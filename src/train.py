@@ -62,7 +62,7 @@ def clean_up(train_data_path):
 def copy_and_remove_latest_run_files(model_save_path, project_name):
     list_of_dirs = glob.glob('runs/detect/' + project_name)
     if not list_of_dirs:
-        print("No 'runs/train/" + project_name + "' directories found. Skipping copy and removal.")
+        print("No 'runs/detect/" + project_name + "' directories found. Skipping copy and removal.")
         return
 
     latest_dir = max(list_of_dirs, key=os.path.getmtime)
