@@ -4,7 +4,7 @@ You can easily run YOLOv9 and YOLOv8 train and detection with the GUI.
 ## train window view
 ![train_windows](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/b9c8581c-d01d-44c8-ad99-1d6e86654891)
 
-## Detect window vies
+## Detect window view
 ![detect_windows](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/1324f91a-0936-4331-a46a-27d4cb747596)
 
 # Prepare
