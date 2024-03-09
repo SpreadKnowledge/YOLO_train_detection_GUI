@@ -83,8 +83,8 @@ def copy_and_remove_latest_run_files(model_save_path, project_name):
 def create_yaml(project_name, train_data_path, class_names, save_directory):
     prepare_data(train_data_path)
 
-    train_path = os.path.join(train_data_path, 'train/images').replace('\\', '/')
-    val_path = os.path.join(train_data_path, 'val/images').replace('\\', '/')
+    train_path = os.path.join(train_data_path, 'train').replace('\\', '/')
+    val_path = os.path.join(train_data_path, 'val').replace('\\', '/')
 
     yaml_content = f"""train: {train_path}
 val: {val_path}
@@ -98,9 +98,9 @@ names: [{', '.join(f"'{name}'" for name in class_names)}]
         file.write(yaml_content)
     return yaml_path
 
-def train_yolov8(data_yaml, model_size='s', img_size=640, batch=8, epochs=100, model_save_path='trained_model', project_name='hogehoge'):
+def train_yolo(data_yaml, model_type, img_size, batch, epochs, model_save_path, project_name):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = YOLO(f'yolov8{model_size}.pt').to(device)
+    model = YOLO(f'{model_type}.pt').to(device)
     results = model.train(data=data_yaml, epochs=epochs, batch=batch, imgsz=img_size, name=project_name, save=True)
     copy_and_remove_latest_run_files(model_save_path, project_name)
     clean_up(os.path.dirname(data_yaml))
@@ -111,13 +111,13 @@ def parse_args():
     train_data_path = sys.argv[2]
     class_names = sys.argv[3].split(',')
     model_save_path = sys.argv[4]
-    model_size = sys.argv[5]
+    model_type = sys.argv[5]
     img_size = int(sys.argv[6])
     epochs = int(sys.argv[7])
     yaml_path = sys.argv[8]
     batch_size = int(sys.argv[9])
 
-    results = train_yolov8(yaml_path, model_size, img_size, batch_size, epochs, model_save_path, project_name)
+    results = train_yolo(yaml_path, model_type, img_size, batch_size, epochs, model_save_path, project_name)
     print(f"Training completed. Model saved to {model_save_path}")
 
 if __name__ == '__main__':

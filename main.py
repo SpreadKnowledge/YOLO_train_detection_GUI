@@ -1,4 +1,4 @@
-# version 0.0.1
+# version 0.1.0
 
 import os
 import customtkinter as ctk
@@ -42,9 +42,9 @@ def read_output(process, queue):
 
 def on_sidebar_select(window_title):
     clear_frame(main_frame)
-    if window_title == "Training":
+    if window_title == "Train":
         show_ai_train_window()
-    elif window_title == "Detection":
+    elif window_title == "Detect":
         show_image_detection_window()
 
 output_queue = Queue()
@@ -142,38 +142,47 @@ def show_ai_train_window():
 
     # モデル保存先選択ボタン
     ctk.CTkLabel(master=main_frame, text="モデルの保存先の選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.17, anchor=ctk.CENTER)
-    model_save_button = ctk.CTkButton(master=main_frame, text="Select YOLOv8's Save Folder", command=select_save_folder, border_color='black', border_width=2, font=("Roboto Medium", 24), text_color='white')
+    model_save_button = ctk.CTkButton(master=main_frame, text="Select Model's Save Folder", command=select_save_folder, border_color='black', border_width=2, font=("Roboto Medium", 24), text_color='white')
     model_save_button.place(relx=0.2, rely=0.2, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
-    # モデルサイズ選択欄
-    ctk.CTkLabel(master=main_frame, text="YOLOv8のモデルサイズ", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.27, anchor=ctk.CENTER)
-    model_size_var = IntVar(value=3)
-    model_sizes = [("Nano", "n", 1), ("Small", "s", 2), ("Medium", "m", 3), ("Large", "l", 4), ("Extra Large", "x", 5)]
-    for text, value, index in model_sizes:
-        ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=index).place(relx=0.05 * index, rely=0.29)
+    # YOLOv9のモデルサイズ
+    ctk.CTkLabel(master=main_frame, text="YOLOv9のモデルサイズの選択", font=("Roboto Medium", 18)).place(relx=0.1, rely=0.26, anchor=tk.W)
+    initial_relx_v9 = 0.04
+    step_size_v9 = 0.07
+    model_sizes_v9 = [("Small", "s", 1), ("Medium", "m", 2), ("Compact", "c", 3), ("Enhanced", "e", 4)]
+    for index, (text, model_code, value) in enumerate(model_sizes_v9, start=1):
+        ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=value, fg_color='deep sky blue').place(relx=initial_relx_v9 + step_size_v9 * (index - 1), rely=0.28)
+
+    # YOLOv8のモデルサイズ
+    ctk.CTkLabel(master=main_frame, text="YOLOv8のモデルサイズの選択", font=("Roboto Medium", 18)).place(relx=0.1, rely=0.32, anchor=tk.W)
+    initial_relx_v8 = 0.04
+    step_size_v8 = 0.07
+    model_sizes_v8 = [("Nano", "n", 5), ("Small", "s", 6), ("Medium", "m", 7), ("Large", "l", 8), ("ExtraLarge", "x", 9)]
+    for index, (text, model_code, value) in enumerate(model_sizes_v8, start=1):
+        ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=value, fg_color='deep sky blue').place(relx=initial_relx_v8 + step_size_v8 * (index - 1), rely=0.34)
 
     # CNNの入力層のサイズ指定
-    ctk.CTkLabel(master=main_frame, text="CNNの入力層のサイズ 【例：640】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.34, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="CNNの入力層のサイズ 【例：640】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.39, anchor=ctk.CENTER)
     input_size_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Input Size", font=("Roboto Medium", 18))
-    input_size_entry.place(relx=0.2, rely=0.37, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
+    input_size_entry.place(relx=0.2, rely=0.42, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # エポック数
-    ctk.CTkLabel(master=main_frame, text="エポック数 【例：100】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.41, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="エポック数 【例：100】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.46, anchor=ctk.CENTER)
     epochs_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Epochs", font=("Roboto Medium", 18))
-    epochs_entry.place(relx=0.2, rely=0.44, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
+    epochs_entry.place(relx=0.2, rely=0.49, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # バッチサイズ
-    ctk.CTkLabel(master=main_frame, text="バッチサイズ 【例：16】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.48, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="バッチサイズ 【例：16】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.53, anchor=ctk.CENTER)
     batch_size_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Batch size", font=("Roboto Medium", 18))
-    batch_size_entry.place(relx=0.2, rely=0.52, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
+    batch_size_entry.place(relx=0.2, rely=0.56, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # クラス名入力ウィンドウ
-    ctk.CTkLabel(master=main_frame, text="クラス名の入力", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.56, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="クラス名の入力", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.60, anchor=ctk.CENTER)
     class_names_text = ctk.CTkTextbox(master=main_frame, font=("Roboto Medium", 18))
-    class_names_text.place(relx=0.2, rely=0.68, relwidth=0.3, relheight=0.20,  anchor=ctk.CENTER)
+    class_names_text.place(relx=0.2, rely=0.7, relwidth=0.3, relheight=0.17,  anchor=ctk.CENTER)
 
     # 学習開始ボタン
-    start_train_button = ctk.CTkButton(master=main_frame, text="Start Training!", command=start_training, fg_color="#FFA500",border_color='black', border_width=3, font=("Roboto Medium", 44), text_color='black')
+    start_train_button = ctk.CTkButton(master=main_frame, text="Start Training!", command=start_training, fg_color="chocolate1",border_color='black', border_width=3, font=("Roboto Medium", 44, "bold"), text_color='white')
     start_train_button.place(relx=0.2, rely=0.84, relwidth=0.4, relheight=0.08, anchor=ctk.CENTER)
 
     # トレーニング進捗表示ウィンドウ
@@ -189,6 +198,10 @@ def show_image_detection_window():
     clear_frame(main_frame)
     main_frame.pack(fill="both", expand=True)
 
+    # 検出画像表示ウィンドウの設定
+    image_label = Label(main_frame)
+    image_label.place(relx=0.5, rely=0.44, relwidth=0.9, relheight=0.84, anchor=ctk.CENTER)
+
     # 画像フォルダの指定ボタンの設定
     select_images_folder_button = ctk.CTkButton(
         master=main_frame, 
@@ -196,51 +209,47 @@ def show_image_detection_window():
         command=select_detection_images_folder,
         border_color='black',
         border_width=2,
-        font=("Roboto Medium", 24),
+        font=("Roboto Medium", 22),
         text_color='white',
     )
-    select_images_folder_button.place(relx=0.1, rely=0.03, relwidth=0.18, relheight=0.05)
+    select_images_folder_button.place(relx=0.05, rely=0.9, relwidth=0.15, relheight=0.05)
 
-    # YOLOv8モデル選択ボタンの設定
+    # モデル選択ボタンの設定
     select_model_button = ctk.CTkButton(
         master=main_frame, 
         text="Select AI", 
         command=select_detection_model,
         border_color='black',
         border_width=2,
-        font=("Roboto Medium", 24),
+        font=("Roboto Medium", 22),
         text_color='white',
     )
-    select_model_button.place(relx=0.3, rely=0.03, relwidth=0.18, relheight=0.05)
+    select_model_button.place(relx=0.22, rely=0.9, relwidth=0.15, relheight=0.05)
 
     # 物体検出開始ボタンの設定
     start_detection_button = ctk.CTkButton(
         master=main_frame, 
         text="Start Detection!", 
         command=lambda: [detection_progress_bar.start(), start_image_detection()],
-        fg_color="#FFA500",
+        fg_color="chocolate1",
         border_color='black',
         border_width=2,
         font=("Roboto Medium", 34),
-        text_color='black',
+        text_color='white',
     )
-    start_detection_button.place(relx=0.7, rely=0.03, relwidth=0.18, relheight=0.05)
-
-    # 検出画像表示ウィンドウの設定
-    image_label = Label(main_frame)
-    image_label.place(relx=0.5, rely=0.495, relwidth=0.9, relheight=0.78, anchor=ctk.CENTER)
+    start_detection_button.place(relx=0.42, rely=0.9, relwidth=0.18, relheight=0.05)
 
     # 「前へ」ボタンの設定
-    prev_button = ctk.CTkButton(master=main_frame, text="◀", command=show_prev_image, border_color='black', border_width=2, font=("Roboto Medium", 46), text_color='white')
-    prev_button.place(relx=0.35, rely=0.9, relwidth=0.12, relheight=0.05)
+    prev_button = ctk.CTkButton(master=main_frame, text="◀", command=show_prev_image, fg_color="DeepSkyBlue2", border_color='black', border_width=2, font=("Roboto Medium", 40), text_color='white')
+    prev_button.place(relx=0.65, rely=0.9, relwidth=0.08, relheight=0.05)
 
     # 「次へ」ボタンの設定
-    next_button = ctk.CTkButton(master=main_frame, text="▶", command=show_next_image, border_color='black', border_width=2, font=("Roboto Medium", 46), text_color='white')
-    next_button.place(relx=0.55, rely=0.9, relwidth=0.12, relheight=0.05)
+    next_button = ctk.CTkButton(master=main_frame, text="▶", command=show_next_image, fg_color="DeepSkyBlue2", border_color='black', border_width=2, font=("Roboto Medium", 40), text_color='white')
+    next_button.place(relx=0.75, rely=0.9, relwidth=0.08, relheight=0.05)
 
     # 画像インデックスを表示するラベルの初期化と配置
-    image_index_label = ctk.CTkLabel(master=main_frame, text=" ", font=("Roboto Medium", 32))
-    image_index_label.place(relx=0.8, rely=0.89, relwidth=0.1, relheight=0.05)
+    image_index_label = ctk.CTkLabel(master=main_frame, text=" ", font=("Roboto Medium", 34))
+    image_index_label.place(relx=0.9, rely=0.9, relwidth=0.1, relheight=0.05)
 
     # プログレスバーの設定
     detection_progress_bar = ctk.CTkProgressBar(master=main_frame, progress_color='limegreen', mode='indeterminate')
@@ -288,7 +297,7 @@ def start_training():
     class_names = class_names_text.get("1.0", "end-1c").split('\n')
     class_names = [name for name in class_names if name.strip() != '']
 
-    model_size_options = {1: "n", 2: "s", 3: "m", 4: "l", 5: "x"}
+    model_size_options = {1: "yolov9s", 2: "yolov9m", 3: "yolov9c", 4: "yolov9e", 5: "yolov8n", 6: "yolov8s", 7: "yolov8m", 8: "yolov8l", 9: "yolov8x"}
     selected_model_size = model_size_options[model_size_var.get()]
 
     if not all([project_name, train_data_path, model_save_path, selected_model_size, input_size, epochs, batch_size, class_names]):
@@ -310,11 +319,14 @@ def update_image_list(results_dir):
     detection_progress_bar.stop()
 
 screen_width, screen_height = get_screen_size()
-ctk.set_appearance_mode("Light")
+ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
 root = ctk.CTk()
+root.title('YOLO Train and Detect App')
 root.geometry(f"{screen_width}x{screen_height}")
+
+model_size_var = IntVar(value=1)
 
 sidebar = ctk.CTkFrame(master=root, width=380, corner_radius=0)
 sidebar.pack(side="left", fill="y")
@@ -322,16 +334,20 @@ sidebar.pack(side="left", fill="y")
 main_frame = ctk.CTkFrame(master=root)
 main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-ai_creation_button = ctk.CTkButton(master=sidebar, text="Training", command=lambda: on_sidebar_select("Training"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
+ai_creation_button = ctk.CTkButton(master=sidebar, text="Train", command=lambda: on_sidebar_select("Train"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
 ai_creation_button.pack(pady=10)
 
-object_detection_button = ctk.CTkButton(master=sidebar, text="Detection", command=lambda: on_sidebar_select("Detection"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
+object_detection_button = ctk.CTkButton(master=sidebar, text="Detect", command=lambda: on_sidebar_select("Detect"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
 object_detection_button.pack(pady=10)
 
-app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv8", font=("Roboto Medium", -16))
-app_name_label.pack(pady=10)
+app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv9", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
+app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
+app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv8", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
 
-signature_label = ctk.CTkLabel(master=sidebar, text="© SpreadKnowledge 2024", text_color="black", font=("Roboto Medium", 10))
+signature_label = ctk.CTkLabel(master=sidebar, text="© SpreadKnowledge 2024", text_color="white", font=("Roboto Medium", 10))
 signature_label.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5, anchor='w')
 
 if __name__ == "__main__":
