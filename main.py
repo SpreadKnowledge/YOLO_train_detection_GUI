@@ -149,7 +149,7 @@ def show_ai_train_window():
     ctk.CTkLabel(master=main_frame, text="YOLOv9のモデルサイズの選択", font=("Roboto Medium", 18)).place(relx=0.1, rely=0.26, anchor=tk.W)
     initial_relx_v9 = 0.04
     step_size_v9 = 0.07
-    model_sizes_v9 = [("Small", "s", 1), ("Medium", "m", 2), ("Compact", "c", 3), ("Enhanced", "e", 4)]
+    model_sizes_v9 = [("Compact", "c", 1), ("Enhanced", "e", 2)]
     for index, (text, model_code, value) in enumerate(model_sizes_v9, start=1):
         ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=value, fg_color='deep sky blue').place(relx=initial_relx_v9 + step_size_v9 * (index - 1), rely=0.28)
 
@@ -157,7 +157,7 @@ def show_ai_train_window():
     ctk.CTkLabel(master=main_frame, text="YOLOv8のモデルサイズの選択", font=("Roboto Medium", 18)).place(relx=0.1, rely=0.32, anchor=tk.W)
     initial_relx_v8 = 0.04
     step_size_v8 = 0.07
-    model_sizes_v8 = [("Nano", "n", 5), ("Small", "s", 6), ("Medium", "m", 7), ("Large", "l", 8), ("ExtraLarge", "x", 9)]
+    model_sizes_v8 = [("Nano", "n", 3), ("Small", "s", 4), ("Medium", "m", 5), ("Large", "l", 6), ("ExtraLarge", "x", 7)]
     for index, (text, model_code, value) in enumerate(model_sizes_v8, start=1):
         ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=value, fg_color='deep sky blue').place(relx=initial_relx_v8 + step_size_v8 * (index - 1), rely=0.34)
 
@@ -217,7 +217,7 @@ def show_image_detection_window():
     # モデル選択ボタンの設定
     select_model_button = ctk.CTkButton(
         master=main_frame, 
-        text="Select AI", 
+        text="Select Model", 
         command=select_detection_model,
         border_color='black',
         border_width=2,
@@ -237,7 +237,7 @@ def show_image_detection_window():
         font=("Roboto Medium", 34),
         text_color='white',
     )
-    start_detection_button.place(relx=0.42, rely=0.9, relwidth=0.18, relheight=0.05)
+    start_detection_button.place(relx=0.42, rely=0.89, relwidth=0.18, relheight=0.07)
 
     # 「前へ」ボタンの設定
     prev_button = ctk.CTkButton(master=main_frame, text="◀", command=show_prev_image, fg_color="DeepSkyBlue2", border_color='black', border_width=2, font=("Roboto Medium", 40), text_color='white')
@@ -249,7 +249,7 @@ def show_image_detection_window():
 
     # 画像インデックスを表示するラベルの初期化と配置
     image_index_label = ctk.CTkLabel(master=main_frame, text=" ", font=("Roboto Medium", 34))
-    image_index_label.place(relx=0.9, rely=0.9, relwidth=0.1, relheight=0.05)
+    image_index_label.place(relx=0.85, rely=0.9, relwidth=0.1, relheight=0.05)
 
     # プログレスバーの設定
     detection_progress_bar = ctk.CTkProgressBar(master=main_frame, progress_color='limegreen', mode='indeterminate')
@@ -297,7 +297,7 @@ def start_training():
     class_names = class_names_text.get("1.0", "end-1c").split('\n')
     class_names = [name for name in class_names if name.strip() != '']
 
-    model_size_options = {1: "yolov9s", 2: "yolov9m", 3: "yolov9c", 4: "yolov9e", 5: "yolov8n", 6: "yolov8s", 7: "yolov8m", 8: "yolov8l", 9: "yolov8x"}
+    model_size_options = {1: "yolov9c", 2: "yolov9e", 3: "yolov8n", 4: "yolov8s", 5: "yolov8m", 6: "yolov8l", 7: "yolov8x"}
     selected_model_size = model_size_options[model_size_var.get()]
 
     if not all([project_name, train_data_path, model_save_path, selected_model_size, input_size, epochs, batch_size, class_names]):
