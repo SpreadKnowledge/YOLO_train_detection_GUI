@@ -1,7 +1,9 @@
 # YOLO_train_detection_GUI
 You can easily run YOLOv9 and YOLOv8 train and detection with the GUI.
 
-[![Hou to use this App？](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/ff6afd34-890a-4c8d-ab14-a4edfa4cbafc)](https://youtu.be/Jk-JkBn4Na0)
+↓ YouTube has a comprehensive guide on how to use this GUI.
+
+[![Hou to use this App](https://img.youtube.com/vi/Jk-JkBn4Na0/maxresdefault.jpg)](https://youtu.be/Jk-JkBn4Na0?si=iZsowHXhxP2pG_XZ)
 
 # Prepare
 Since we will be using PyTorch 2.2.1, please install CUDA 12.1 or CUDA 11.8 beforehand. Note that main.py will work without CUDA.
