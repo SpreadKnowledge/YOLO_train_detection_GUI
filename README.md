@@ -10,8 +10,8 @@ Since we will be using PyTorch 2.2.1, please install CUDA 12.1 or CUDA 11.8 befo
 
 ## Download repository and create virtual environment
 ```
-conda create -n yolov8 python=3.11
-conda activate yolov8
+conda create -n yolo-gui python=3.12
+conda activate yolo-gui
 
 git clone https://github.com/SpreadKnowledge/YOLO_train_detection_GUI.git
 cd YOLO_train_detection_GUI
