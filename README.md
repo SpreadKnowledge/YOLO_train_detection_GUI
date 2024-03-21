@@ -21,7 +21,7 @@ pip install -r requirements.txt
 Please save the YOLO format's annotation file (.txt) created by labelImg or VoTT together with the paired image files in one directory.
 You do not need to split them into train and val directories or create yaml files. The process is handled automatically within this application.
 
-# Run YOLOv8 GUI application 
+# Run GUI application 
 ```
 python main.py
 ```
