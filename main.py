@@ -1,16 +1,19 @@
-# version 0.1.0
+# version 0.1.1
 
 import os
+import cv2
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog, IntVar, Label
+from tkinter import filedialog, IntVar, Label, messagebox
 from PIL import Image, ImageTk
 import ctypes
 import threading
 import subprocess
+import datetime
 from queue import Queue, Empty
 from src.train import create_yaml
 from src.detect import detect_images
+from src.camera import CameraDetection
 
 project_name = ""
 train_data_path = ""
@@ -23,7 +26,7 @@ image_paths = []
 current_image_index = 0
 image_label = None
 
-global start_train_button, detection_progress_bar, image_index_label
+global start_train_button, detection_progress_bar, image_index_label, camera_detection, detection_model_path, detection_save_dir, camera_id_entry
 
 def get_screen_size():
     user32 = ctypes.windll.user32
@@ -44,8 +47,10 @@ def on_sidebar_select(window_title):
     clear_frame(main_frame)
     if window_title == "Train":
         show_ai_train_window()
-    elif window_title == "Detect":
+    elif window_title == "Image/Video":
         show_image_detection_window()
+    elif window_title == "Camera Detection":
+        show_camera_detection_window()
 
 output_queue = Queue()
 
@@ -142,7 +147,7 @@ def show_ai_train_window():
 
     # モデル保存先選択ボタン
     ctk.CTkLabel(master=main_frame, text="モデルの保存先の選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.17, anchor=ctk.CENTER)
-    model_save_button = ctk.CTkButton(master=main_frame, text="Select Model's Save Folder", command=select_save_folder, border_color='black', border_width=2, font=("Roboto Medium", 24), text_color='white')
+    model_save_button = ctk.CTkButton(master=main_frame, text="Select Model's Save Folder", command=select_model_save_folder, border_color='black', border_width=2, font=("Roboto Medium", 24), text_color='white')
     model_save_button.place(relx=0.2, rely=0.2, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # YOLOv9のモデルサイズ
@@ -255,11 +260,77 @@ def show_image_detection_window():
     detection_progress_bar = ctk.CTkProgressBar(master=main_frame, progress_color='limegreen', mode='indeterminate')
     detection_progress_bar.place(relx=0.5, rely=0.98, relwidth=0.7, anchor=ctk.CENTER)
 
+def show_camera_detection_window():
+    global camera_detection, detection_model_path, detection_save_dir, camera_id_entry, start_detection_button, image_label
+
+    clear_frame(main_frame)
+    main_frame.pack(fill="both", expand=True)
+
+    camera_detection = None
+
+    # Camera Stream Display
+    image_label = Label(main_frame)
+    image_label.place(relx=0.5, rely=0.48, relwidth=0.99, relheight=0.94, anchor=ctk.CENTER)
+
+    # Select Model Button
+    select_model_button = ctk.CTkButton(
+        master=main_frame, 
+        text="Select Model", 
+        command=select_detection_model,
+        border_color='black',
+        border_width=2,
+        font=("Roboto Medium", 20),
+        text_color='white',
+    )
+    select_model_button.place(relx=0.04, rely=0.97, relwidth=0.12, relheight=0.03)
+
+    # Select Save Folder Button
+    select_save_folder_button = ctk.CTkButton(
+        master=main_frame, 
+        text="Select Save Folder", 
+        command=select_camera_save_folder,
+        border_color='black',
+        border_width=2,
+        font=("Roboto Medium", 20),
+        text_color='white',
+    )
+    select_save_folder_button.place(relx=0.175, rely=0.97, relwidth=0.12, relheight=0.03)
+
+    # Camera ID Entry
+    camera_id_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Camera ID", font=("Roboto Medium", 18))
+    camera_id_entry.place(relx=0.35, rely=0.97, relwidth=0.12, relheight=0.03)
+
+    # Start Detection Button
+    start_detection_button = ctk.CTkButton(
+        master=main_frame, 
+        text="START", 
+        command=start_camera_detection,
+        fg_color="green",
+        border_color='black',
+        border_width=2,
+        font=("Roboto Medium", 28),
+        text_color='white',
+    )
+    start_detection_button.place(relx=0.8, rely=0.97, relwidth=0.15, relheight=0.03)
+
+    # Instructions Label
+    # instructions_label = ctk.CTkLabel(
+    #     master=main_frame, 
+    #     text="Press ENTER to capture image and save detection results.", 
+    #     font=("Roboto Medium", 18)
+    # )
+    # instructions_label.place(relx=0.5, rely=0.95, anchor=ctk.CENTER)
+
+    root.bind('<Return>', lambda event: save_callback())
+
+    image_label.update_idletasks()
+    image_label.update()
+
 def select_train_data():
     global train_data_path
     train_data_path = filedialog.askdirectory()
 
-def select_save_folder():
+def select_model_save_folder():
     global model_save_path
     model_save_path = filedialog.askdirectory()
 
@@ -274,6 +345,13 @@ def select_detection_model():
     detection_model_path = filedialog.askopenfilename(filetypes=[("YOLOv8 Model", "*.pt")])
     if detection_model_path:
         print(f"Selected model: {detection_model_path}")
+
+def select_camera_save_folder():
+    global detection_save_dir
+    detection_save_dir = filedialog.askdirectory()
+    if detection_save_dir and camera_detection:
+        camera_detection.set_save_directory(detection_save_dir)
+        print(f"Selected save folder: {detection_save_dir}")
 
 def select_detection_yaml():
     global detection_yaml_path
@@ -318,8 +396,68 @@ def update_image_list(results_dir):
     update_image()
     detection_progress_bar.stop()
 
+def start_camera_detection():
+    global camera_detection, camera_id_entry, start_detection_button, image_label
+
+    start_detection_button.configure(text="STOP", fg_color="red", command=stop_camera_detection)
+    root.update()
+
+    camera_id = int(camera_id_entry.get())
+    try:
+        camera_detection = CameraDetection(detection_model_path)
+        camera_detection.start_camera(camera_id)
+        camera_detection.show_camera_stream(image_label)
+    except ValueError as e:
+        image_label.config(text="No Camera", fg_color="red")
+        start_detection_button.configure(text="START", fg_color="green", command=start_camera_detection)
+
+def stop_camera_detection():
+    global camera_detection, start_detection_button
+    camera_detection.stop()
+    start_detection_button.configure(text="START", fg_color="green", command=start_camera_detection)
+
+def save_callback():
+    if camera_detection:
+        if detection_save_dir:
+            camera_detection.set_save_directory(detection_save_dir)
+        camera_detection.capture_frame()
+    else:
+        print("Camera detection not started")
+
+def capture_frame(self):
+    if not self.cap:
+        return
+
+    ret, frame = self.cap.read()
+    if not ret:
+        return
+
+    self.scene_id += 1
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    base_filename = f"{timestamp}_{self.scene_id:04d}"
+
+    origin_image_path = os.path.join(self.save_dir, f"{base_filename}_origin.jpg")
+    cv2.imwrite(origin_image_path, frame)
+
+    results = self.model(frame)
+    self._draw_bounding_boxes(frame, results)
+
+    detection_image_path = os.path.join(self.save_dir, f"{base_filename}_detection.jpg")
+    cv2.imwrite(detection_image_path, frame)
+
+    txt_path = os.path.join(self.save_dir, f"{base_filename}_detection.txt")
+    with open(txt_path, 'w') as f:
+        for result in results[0].boxes:
+            if result.conf[0] >= self.conf_threshold:
+                x1, y1, x2, y2 = map(int, result.xyxy[0])
+                label = self.model.names[int(result.cls[0])]
+                confidence = result.conf[0]
+                f.write(f"{label} {confidence:.2f} {x1} {y1} {x2} {y2}\n")
+
+    return origin_image_path, detection_image_path, txt_path
+
 screen_width, screen_height = get_screen_size()
-ctk.set_appearance_mode("Dark")
+ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
 root = ctk.CTk()
@@ -337,8 +475,11 @@ main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 ai_creation_button = ctk.CTkButton(master=sidebar, text="Train", command=lambda: on_sidebar_select("Train"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
 ai_creation_button.pack(pady=10)
 
-object_detection_button = ctk.CTkButton(master=sidebar, text="Detect", command=lambda: on_sidebar_select("Detect"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
+object_detection_button = ctk.CTkButton(master=sidebar, text="Image/Video", command=lambda: on_sidebar_select("Image/Video"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
 object_detection_button.pack(pady=10)
+
+camera_detection_button = ctk.CTkButton(master=sidebar, text="Camera", command=lambda: on_sidebar_select("Camera Detection"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
+camera_detection_button.pack(pady=10)
 
 app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv9", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)
