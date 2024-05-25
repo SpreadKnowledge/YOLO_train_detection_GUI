@@ -118,9 +118,12 @@ class CameraDetection:
             for result in results[0].boxes:
                 if result.conf[0] >= self.conf_threshold:
                     x1, y1, x2, y2 = map(int, result.xyxy[0])
-                    label = self.model.names[int(result.cls[0])]
-                    confidence = result.conf[0]
-                    f.write(f"{label} {confidence:.2f} {x1} {y1} {x2} {y2}\n")
+                    class_index = int(result.cls[0])
+                    x_center = (x1 + x2) / (2 * self.original_width)
+                    y_center = (y1 + y2) / (2 * self.original_height)
+                    width = (x2 - x1) / self.original_width
+                    height = (y2 - y1) / self.original_height
+                    f.write(f"{class_index} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
 
         return origin_image_path, detection_image_path, txt_path
 

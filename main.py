@@ -297,7 +297,7 @@ def show_camera_detection_window():
     select_save_folder_button.place(relx=0.175, rely=0.96, relwidth=0.12, relheight=0.03)
 
     # Camera ID Entry
-    camera_id_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Camera ID", font=("Roboto Medium", 18))
+    camera_id_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Camera ID (Ex: 0)", font=("Roboto Medium", 18))
     camera_id_entry.place(relx=0.32, rely=0.96, relwidth=0.12, relheight=0.03)
 
     # Start Detection Button
