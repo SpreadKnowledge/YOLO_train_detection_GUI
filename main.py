@@ -282,7 +282,7 @@ def show_camera_detection_window():
         font=("Roboto Medium", 20),
         text_color='white',
     )
-    select_model_button.place(relx=0.04, rely=0.97, relwidth=0.12, relheight=0.03)
+    select_model_button.place(relx=0.04, rely=0.96, relwidth=0.12, relheight=0.03)
 
     # Select Save Folder Button
     select_save_folder_button = ctk.CTkButton(
@@ -294,11 +294,11 @@ def show_camera_detection_window():
         font=("Roboto Medium", 20),
         text_color='white',
     )
-    select_save_folder_button.place(relx=0.175, rely=0.97, relwidth=0.12, relheight=0.03)
+    select_save_folder_button.place(relx=0.175, rely=0.96, relwidth=0.12, relheight=0.03)
 
     # Camera ID Entry
     camera_id_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Camera ID", font=("Roboto Medium", 18))
-    camera_id_entry.place(relx=0.35, rely=0.97, relwidth=0.12, relheight=0.03)
+    camera_id_entry.place(relx=0.32, rely=0.96, relwidth=0.12, relheight=0.03)
 
     # Start Detection Button
     start_detection_button = ctk.CTkButton(
@@ -311,15 +311,14 @@ def show_camera_detection_window():
         font=("Roboto Medium", 28),
         text_color='white',
     )
-    start_detection_button.place(relx=0.8, rely=0.97, relwidth=0.15, relheight=0.03)
+    start_detection_button.place(relx=0.8, rely=0.96, relwidth=0.15, relheight=0.03)
 
-    # Instructions Label
-    # instructions_label = ctk.CTkLabel(
-    #     master=main_frame, 
-    #     text="Press ENTER to capture image and save detection results.", 
-    #     font=("Roboto Medium", 18)
-    # )
-    # instructions_label.place(relx=0.5, rely=0.95, anchor=ctk.CENTER)
+    instructions_label = ctk.CTkLabel(
+        master=main_frame, 
+        text="Press ENTER to capture and save detection result.", 
+        font=("Roboto Medium", 14)
+    )
+    instructions_label.place(relx=0.6, rely=0.98, anchor=ctk.CENTER)
 
     root.bind('<Return>', lambda event: save_callback())
 
@@ -456,6 +455,9 @@ def capture_frame(self):
 
     return origin_image_path, detection_image_path, txt_path
 
+def change_appearance_mode(new_appearance_mode):
+    ctk.set_appearance_mode(new_appearance_mode)
+
 screen_width, screen_height = get_screen_size()
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -475,10 +477,10 @@ main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 ai_creation_button = ctk.CTkButton(master=sidebar, text="Train", command=lambda: on_sidebar_select("Train"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 24))
 ai_creation_button.pack(pady=10)
 
-object_detection_button = ctk.CTkButton(master=sidebar, text="Image/Video", command=lambda: on_sidebar_select("Image/Video"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
+object_detection_button = ctk.CTkButton(master=sidebar, text="Image/Video", command=lambda: on_sidebar_select("Image/Video"), fg_color="chocolate1", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
 object_detection_button.pack(pady=10)
 
-camera_detection_button = ctk.CTkButton(master=sidebar, text="Camera", command=lambda: on_sidebar_select("Camera Detection"), fg_color="dodgerblue", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
+camera_detection_button = ctk.CTkButton(master=sidebar, text="Camera", command=lambda: on_sidebar_select("Camera Detection"), fg_color="chocolate1", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
 camera_detection_button.pack(pady=10)
 
 app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv9", font=("Roboto Medium", 16))
@@ -487,6 +489,19 @@ app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 1
 app_name_label.pack(pady=1)
 app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv8", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)
+
+empty_space = ctk.CTkLabel(master=sidebar, text="")
+empty_space.pack(fill=tk.BOTH, expand=True)
+
+appearance_mode_var = ctk.StringVar(value="Light")
+appearance_mode_label = ctk.CTkLabel(master=sidebar, text="Appearance Mode", font=("Roboto Medium", 12))
+appearance_mode_label.pack(padx=10, pady=(0, 5), anchor='w')
+
+light_mode_radio = ctk.CTkRadioButton(master=sidebar, text="Light", variable=appearance_mode_var, value="Light", command=lambda: change_appearance_mode("Light"))
+light_mode_radio.pack(padx=10, pady=(0, 5), anchor='w')
+
+dark_mode_radio = ctk.CTkRadioButton(master=sidebar, text="Dark", variable=appearance_mode_var, value="Dark", command=lambda: change_appearance_mode("Dark"))
+dark_mode_radio.pack(padx=10, pady=(0, 10), anchor='w')
 
 signature_label = ctk.CTkLabel(master=sidebar, text="© SpreadKnowledge 2024", text_color="white", font=("Roboto Medium", 10))
 signature_label.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5, anchor='w')
