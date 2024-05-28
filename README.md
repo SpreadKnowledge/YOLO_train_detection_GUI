@@ -1,5 +1,5 @@
 
-# YOLO Train and Detect App “Complete Your Learning and Detection Seamlessly on Our GUI”
+# YOLO Train and Detect App “Complete Your Learning and Detection Seamlessly on This GUI”
 
 ![スクリーンショット 2024-05-25 163018](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/5ff31879-8756-4561-ad5e-a5f6b0529798)
 
