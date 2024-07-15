@@ -25,6 +25,7 @@ class_names = []
 image_paths = []
 current_image_index = 0
 image_label = None
+selected_model_var = None
 
 global start_train_button, detection_progress_bar, image_index_label, camera_detection, detection_model_path, detection_save_dir, camera_id_entry
 
@@ -97,7 +98,7 @@ def show_prev_image():
         current_image_index = (current_image_index - 1) % len(image_paths)
         update_image()
 
-def start_training_and_capture_output(yaml_path):
+def start_training_and_capture_output(yaml_path, selected_model_size):
     global project_name, class_names, input_size, batch_size, epochs, model_save_path
 
     def run_training():
@@ -130,59 +131,65 @@ def start_training_and_capture_output(yaml_path):
     progress_bar.start()
 
 def show_ai_train_window():
-    global project_name_entry, input_size_entry, epochs_entry, batch_size_entry, class_names_text, progress_bar, model_size_var, output_textbox, start_train_button
-    # AI作成ウィンドウのGUI要素を配置
+    global project_name_entry, input_size_entry, epochs_entry, batch_size_entry, class_names_text, progress_bar, output_textbox, start_train_button, selected_model_var
+
     main_frame.pack_forget()
     main_frame.pack(fill="both", expand=True)
 
     # プロジェクト名入力
-    ctk.CTkLabel(master=main_frame, text="プロジェクト名（半角英数）", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.03, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Project Name: プロジェクト名（半角英数）", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.03, anchor=ctk.CENTER)
     project_name_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Project Name", width=250, height=50, font=("Roboto Medium", 18))
     project_name_entry.place(relx=0.2, rely=0.06, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # トレーニングデータ選択ボタン
-    ctk.CTkLabel(master=main_frame, text="学習データの選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.10, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Select Train data: 学習データの選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.10, anchor=ctk.CENTER)
     train_data_button = ctk.CTkButton(master=main_frame, text="Select Train Data", command=select_train_data, border_color='black', border_width=2, font=("Roboto Medium", 24), text_color='white')
     train_data_button.place(relx=0.2, rely=0.13, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # モデル保存先選択ボタン
-    ctk.CTkLabel(master=main_frame, text="モデルの保存先の選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.17, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Select Save Folder: モデルの保存先の選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.17, anchor=ctk.CENTER)
     model_save_button = ctk.CTkButton(master=main_frame, text="Select Model's Save Folder", command=select_model_save_folder, border_color='black', border_width=2, font=("Roboto Medium", 24), text_color='white')
     model_save_button.place(relx=0.2, rely=0.2, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
-    # YOLOv9のモデルサイズ
-    ctk.CTkLabel(master=main_frame, text="YOLOv9のモデルサイズの選択", font=("Roboto Medium", 18)).place(relx=0.1, rely=0.26, anchor=tk.W)
-    initial_relx_v9 = 0.04
-    step_size_v9 = 0.07
-    model_sizes_v9 = [("Compact", "c", 1), ("Enhanced", "e", 2)]
-    for index, (text, model_code, value) in enumerate(model_sizes_v9, start=1):
-        ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=value, fg_color='deep sky blue').place(relx=initial_relx_v9 + step_size_v9 * (index - 1), rely=0.28)
-
-    # YOLOv8のモデルサイズ
-    ctk.CTkLabel(master=main_frame, text="YOLOv8のモデルサイズの選択", font=("Roboto Medium", 18)).place(relx=0.1, rely=0.32, anchor=tk.W)
-    initial_relx_v8 = 0.04
-    step_size_v8 = 0.07
-    model_sizes_v8 = [("Nano", "n", 3), ("Small", "s", 4), ("Medium", "m", 5), ("Large", "l", 6), ("ExtraLarge", "x", 7)]
-    for index, (text, model_code, value) in enumerate(model_sizes_v8, start=1):
-        ctk.CTkRadioButton(master=main_frame, text=text, variable=model_size_var, value=value, fg_color='deep sky blue').place(relx=initial_relx_v8 + step_size_v8 * (index - 1), rely=0.34)
+    # モデル選択ドロップダウン
+    ctk.CTkLabel(master=main_frame, text="Select YOLO Model: YOLOのモデル選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.26, anchor=ctk.CENTER)
+    model_options = ["YOLOv8-Nano", "YOLOv8-Small", "YOLOv8-Medium", "YOLOv8-Large", "YOLOv8-ExtraLarge", 
+                     "YOLOv9-Compact", "YOLOv9-Enhanced",
+                     "YOLOv10-Nano", "YOLOv10-Small", "YOLOv10-Medium", "YOLOv10-Balanced", "YOLOv10-Large", "YOLOv10-ExtraLarge"]
+    selected_model_var = ctk.StringVar(value=model_options[0])
+    border_frame = ctk.CTkFrame(master=main_frame, fg_color="black", width=254, height=44)
+    border_frame.place(relx=0.2, rely=0.29, anchor=ctk.CENTER)
+    model_menu = ctk.CTkOptionMenu(
+        master=border_frame,
+        variable=selected_model_var,
+        values=model_options,
+        font=("Roboto Medium", 18),
+        dropdown_font=("Roboto Medium", 18),
+        button_color="white",
+        button_hover_color="lightgray",
+        dropdown_hover_color="lightgray",
+        width=250,
+        height=40,
+    )
+    model_menu.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
     # CNNの入力層のサイズ指定
-    ctk.CTkLabel(master=main_frame, text="CNNの入力層のサイズ 【例：640】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.39, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="CNN Input Size: CNNの入力層のサイズ 【Ex: 640】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.39, anchor=ctk.CENTER)
     input_size_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Input Size", font=("Roboto Medium", 18))
     input_size_entry.place(relx=0.2, rely=0.42, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # エポック数
-    ctk.CTkLabel(master=main_frame, text="エポック数 【例：100】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.46, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Epochs: エポック数 【Ex: 100】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.46, anchor=ctk.CENTER)
     epochs_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Epochs", font=("Roboto Medium", 18))
     epochs_entry.place(relx=0.2, rely=0.49, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # バッチサイズ
-    ctk.CTkLabel(master=main_frame, text="バッチサイズ 【例：16】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.53, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Batch Size: バッチサイズ 【Ex: 16】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.53, anchor=ctk.CENTER)
     batch_size_entry = ctk.CTkEntry(master=main_frame, placeholder_text="Batch size", font=("Roboto Medium", 18))
     batch_size_entry.place(relx=0.2, rely=0.56, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # クラス名入力ウィンドウ
-    ctk.CTkLabel(master=main_frame, text="クラス名の入力", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.60, anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Class name: クラス名", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.60, anchor=ctk.CENTER)
     class_names_text = ctk.CTkTextbox(master=main_frame, font=("Roboto Medium", 18))
     class_names_text.place(relx=0.2, rely=0.7, relwidth=0.3, relheight=0.17,  anchor=ctk.CENTER)
 
@@ -365,8 +372,16 @@ def animate_progress_bar(progress, step):
     progress_bar.set(progress)
     root.after(50, animate_progress_bar, progress + step, step)
 
+def model_name_to_type(model_name):
+    model_map = {
+        "YOLOv8-Nano": "yolov8n", "YOLOv8-Small": "yolov8s", "YOLOv8-Medium": "yolov8m", "YOLOv8-Large": "yolov8l", "YOLOv8-ExtraLarge": "yolov8x",
+        "YOLOv9-Compact": "yolov9c", "YOLOv9-Enhanced": "yolov9e",
+        "YOLOv10-Nano": "yolov10n", "YOLOv10-Small": "yolov10s", "YOLOv10-Medium": "yolov10m", "YOLOv10-Balanced": "yolov10b", "YOLOv10-Large": "yolov10l", "YOLOv10-ExtraLarge": "yolov10x"
+    }
+    return model_map.get(model_name, "")
+
 def start_training():
-    global project_name, train_data_path, model_save_path, selected_model_size, input_size, epochs, batch_size, class_names
+    global project_name, train_data_path, model_save_path, selected_model_var, input_size, epochs, batch_size, class_names
     project_name = project_name_entry.get()
     input_size = input_size_entry.get()
     epochs = epochs_entry.get()
@@ -374,15 +389,14 @@ def start_training():
     class_names = class_names_text.get("1.0", "end-1c").split('\n')
     class_names = [name for name in class_names if name.strip() != '']
 
-    model_size_options = {1: "yolov9c", 2: "yolov9e", 3: "yolov8n", 4: "yolov8s", 5: "yolov8m", 6: "yolov8l", 7: "yolov8x"}
-    selected_model_size = model_size_options[model_size_var.get()]
+    selected_model_size = model_name_to_type(selected_model_var.get())
 
     if not all([project_name, train_data_path, model_save_path, selected_model_size, input_size, epochs, batch_size, class_names]):
         print("Error: One or more required parameters are missing.")
         return
 
     yaml_path = create_yaml(project_name, train_data_path, class_names, model_save_path)
-    start_training_and_capture_output(yaml_path)
+    start_training_and_capture_output(yaml_path, selected_model_size)
 
 def start_image_detection():
     global detection_images_folder_path, detection_model_path
