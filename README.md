@@ -16,7 +16,7 @@ This application is a user-friendly GUI tool built with PyTorch, Ultralytics lib
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/your-username/your-repository.git
+git clone https://github.com/SpreadKnowledge/YOLO_train_detection_GUI.git
 ```
 2. Navigate to the project directory:
 ```bash
@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/your-username/your-repository.git
+git clone https://github.com/SpreadKnowledge/YOLO_train_detection_GUI.git
 ```
 2. Navigate to the project directory:
 ```bash
