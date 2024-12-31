@@ -1,7 +1,7 @@
 
 # YOLO Train and Detect App “Complete Your Learning and Detection Seamlessly on This GUI”
 
-🎉 **NEW:** We now support YOLOv10! Train and detect with the latest YOLO version. 🎉
+🎉 **NEW: 2024/12/29 ** We now support YOLOv11! Train and detect with the latest YOLO version. 🎉
 
 ![スクリーンショット 2024-05-25 163018](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/5ff31879-8756-4561-ad5e-a5f6b0529798)
 
