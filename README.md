@@ -1,11 +1,11 @@
 
 # YOLO Train and Detect App “Complete Your Learning and Detection Seamlessly on This GUI”
 
-🎉 **NEW: 2024/12/29 ** We now support YOLOv11! Train and detect with the latest YOLO version. 🎉
+🎉 **NEW: 2025/05/29 ** We now support YOLOv12! Train and detect with the latest YOLO version. 🎉
 
 ![スクリーンショット 2024-05-25 163018](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/5ff31879-8756-4561-ad5e-a5f6b0529798)
 
-This application is a user-friendly GUI tool built with PyTorch, Ultralytics library, and CustomTkinter. It allows you to easily develop and train YOLOv8 and YOLOv9 models, and perform object detection on images, videos, and webcam feeds using the trained models. The detection results can be saved for further analysis.
+This application is a user-friendly GUI tool built with PyTorch, Ultralytics library, and CustomTkinter. It allows you to easily develop and train models such as YOLOv12, and perform object detection on images, videos, and webcam feeds using the trained models. The detection results can be saved for further analysis.
 
 ↓ Please watch the instructional video (in English) uploaded on YouTube to check out the specific operation.
 [![YOLO Train and Detect App Demo](https://img.youtube.com/vi/Jk-JkBn4Na0/0.jpg)](https://youtu.be/Jk-JkBn4Na0?si=hMqGkJ4YAjnaKbQW)
