@@ -156,7 +156,8 @@ def show_ai_train_window():
     model_options = ["YOLOv8-Nano", "YOLOv8-Small", "YOLOv8-Medium", "YOLOv8-Large", "YOLOv8-ExtraLarge", 
                      "YOLOv9-Compact", "YOLOv9-Enhanced",
                      "YOLOv10-Nano", "YOLOv10-Small", "YOLOv10-Medium", "YOLOv10-Balanced", "YOLOv10-Large", "YOLOv10-ExtraLarge",
-                     "YOLOv11-Nano", "YOLOv11-Tiny", "YOLOv11-Medium","YOLOv11-Large","YOLOv11-ExtraLarge"]
+                     "YOLOv11-Nano", "YOLOv11-Tiny", "YOLOv11-Medium","YOLOv11-Large","YOLOv11-ExtraLarge",
+                     "YOLOv12-Nano", "YOLOv12-Tiny", "YOLOv12-Medium","YOLOv12-Large","YOLOv12-ExtraLarge"]
     selected_model_var = ctk.StringVar(value=model_options[0])
     border_frame = ctk.CTkFrame(master=main_frame, fg_color="black", width=254, height=44)
     border_frame.place(relx=0.2, rely=0.29, anchor=ctk.CENTER)
@@ -379,6 +380,7 @@ def model_name_to_type(model_name):
         "YOLOv9-Compact": "yolov9c", "YOLOv9-Enhanced": "yolov9e",
         "YOLOv10-Nano": "yolov10n", "YOLOv10-Small": "yolov10s", "YOLOv10-Medium": "yolov10m", "YOLOv10-Balanced": "yolov10b", "YOLOv10-Large": "yolov10l", "YOLOv10-ExtraLarge": "yolov10x",
         "YOLOv11-Nano": "yolo11n", "YOLOv11-Small": "yolo11s", "YOLOv11-Medium": "yolo11m", "YOLOv11-Large": "yolo11l", "YOLOv11-ExtraLarge": "yolo11x",
+        "YOLOv12-Nano": "yolo12n", "YOLOv12-Small": "yolo12s", "YOLOv12-Medium": "yolo12m", "YOLOv12-Large": "yolo12l", "YOLOv12-ExtraLarge": "yolo12x",
     }
     return model_map.get(model_name, "")
 
@@ -499,6 +501,10 @@ object_detection_button.pack(pady=10)
 camera_detection_button = ctk.CTkButton(master=sidebar, text="Camera", command=lambda: on_sidebar_select("Camera Detection"), fg_color="chocolate1", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
 camera_detection_button.pack(pady=10)
 
+app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv12", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
+app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
 app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv11", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)
 app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 16))
