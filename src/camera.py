@@ -2,10 +2,16 @@ import cv2
 import threading
 import time
 import os
+from pathlib import Path
 from ultralytics import YOLO
 import torch
 from datetime import datetime
 from PIL import Image, ImageTk
+
+def normalize_path(path):
+    if not path:
+        return path
+    return str(Path(path).resolve())
 
 class CameraDetection:
     def __init__(self, model_path, conf_threshold=0.5):
@@ -103,18 +109,20 @@ class CameraDetection:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         base_filename = f"{timestamp}_{self.scene_id:04d}"
 
-        origin_image_path = os.path.join(self.save_dir, f"{base_filename}_origin.jpg")
+        save_dir_path = Path(self.save_dir)
+        
+        origin_image_path = str(save_dir_path / f"{base_filename}_origin.jpg")
         cv2.imwrite(origin_image_path, frame)
 
         detection_frame = frame.copy()
         results = self.model(detection_frame)
         self._draw_bounding_boxes(detection_frame, results)
 
-        detection_image_path = os.path.join(self.save_dir, f"{base_filename}_detection.jpg")
+        detection_image_path = str(save_dir_path / f"{base_filename}_detection.jpg")
         cv2.imwrite(detection_image_path, detection_frame)
 
-        txt_path = os.path.join(self.save_dir, f"{base_filename}_detection.txt")
-        with open(txt_path, 'w') as f:
+        txt_path = str(save_dir_path / f"{base_filename}_detection.txt")
+        with open(txt_path, 'w', encoding='utf-8') as f:
             for result in results[0].boxes:
                 if result.conf[0] >= self.conf_threshold:
                     x1, y1, x2, y2 = map(int, result.xyxy[0])

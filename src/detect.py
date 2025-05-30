@@ -1,27 +1,43 @@
 import shutil
 import os
-import glob
+from pathlib import Path
 from ultralytics import YOLO
 
 def move_detection_results(source_dir, target_dir):
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
-    for file_name in os.listdir(source_dir):
-        source_file = os.path.join(source_dir, file_name)
-        target_file = os.path.join(target_dir, file_name)
-        if os.path.exists(target_file):
-            if os.path.isdir(target_file):
-                shutil.rmtree(target_file)
+    source_dir = Path(source_dir)
+    target_dir = Path(target_dir)
+    
+    # Create target directory if it doesn't exist
+    target_dir.mkdir(parents=True, exist_ok=True)
+    
+    for file_path in source_dir.iterdir():
+        target_file = target_dir / file_path.name
+        
+        # Remove existing file/directory if it exists
+        if target_file.exists():
+            if target_file.is_dir():
+                shutil.rmtree(str(target_file))
             else:
-                os.remove(target_file)
-        shutil.move(source_file, target_dir)
-    shutil.rmtree(source_dir)
+                target_file.unlink()
+        
+        # Move the file
+        if file_path.is_file():
+            shutil.move(str(file_path), str(target_file))
+        else:
+            shutil.move(str(file_path), str(target_dir))
+    
+    # Clean up source directory
+    shutil.rmtree(str(source_dir))
 
 def detect_images(images_folder, model_path, callback=None):
     model = YOLO(model_path)
     results = model.predict(images_folder, save=True, save_txt=True, imgsz=640, conf=0.5)
-    latest_run_dir = max(glob.glob(os.path.join('runs', 'detect', '*')), key=os.path.getmtime)
-    results_dir = os.path.join(images_folder, 'results')
+    
+    runs_dir = Path('runs/detect')
+    # Get latest run directory
+    latest_run_dir = max(runs_dir.glob('*'), key=lambda p: p.stat().st_mtime)
+    results_dir = Path(images_folder) / 'results'
+    
     move_detection_results(latest_run_dir, results_dir)
     if callback:
-        callback(results_dir)
+        callback(str(results_dir))

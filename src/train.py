@@ -4,25 +4,33 @@ import torch
 import shutil
 import glob
 import random
+from pathlib import Path
 from ultralytics import YOLO
 
+def normalize_path(path):
+    if not path:
+        return path
+    return str(Path(path).resolve())
+
 def prepare_data(train_data_path):
-    train_dir_exists = os.path.exists(os.path.join(train_data_path, 'train/images')) and os.path.exists(os.path.join(train_data_path, 'train/labels'))
-    val_dir_exists = os.path.exists(os.path.join(train_data_path, 'val/images')) and os.path.exists(os.path.join(train_data_path, 'val/labels'))
+    train_data_path = normalize_path(train_data_path)
+    train_path = Path(train_data_path)
+    train_dir_exists = (train_path / 'train/images').exists() and (train_path / 'train/labels').exists()
+    val_dir_exists = (train_path / 'val/images').exists() and (train_path / 'val/labels').exists()
 
     if train_dir_exists and val_dir_exists:
         print("Train and validation directories already exist. Skipping file preparation.")
         return
 
     for path in ['train/images', 'train/labels', 'val/images', 'val/labels']:
-        os.makedirs(os.path.join(train_data_path, path), exist_ok=True)
+        (train_path / path).mkdir(parents=True, exist_ok=True)
 
     all_files = set(os.listdir(train_data_path))
     paired_files = []
     for file in all_files:
-        if file.endswith('.jpg') or file.endswith('.png'):
-            basename = os.path.splitext(file)[0]
-            txt_file = basename + '.txt'
+        if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+            basename = Path(file).stem
+            txt_file = f"{basename}.txt"
             if txt_file in all_files:
                 paired_files.append((file, txt_file))
 
@@ -36,14 +44,17 @@ def prepare_data(train_data_path):
     move_files(val_files, train_data_path, 'val')
 
 def move_files(files, base_path, data_type):
+    base_path = Path(base_path)
     for img_file, txt_file in files:
-        src_img_path = os.path.join(base_path, img_file)
-        dst_img_path = os.path.join(base_path, data_type, 'images', img_file)
-        shutil.move(src_img_path, dst_img_path)
+        # Move image file
+        src_img = base_path / img_file
+        dst_img = base_path / data_type / 'images' / img_file
+        shutil.move(str(src_img), str(dst_img))
 
-        src_txt_path = os.path.join(base_path, txt_file)
-        dst_txt_path = os.path.join(base_path, data_type, 'labels', txt_file)
-        shutil.move(src_txt_path, dst_txt_path)
+        # Move label file
+        src_txt = base_path / txt_file
+        dst_txt = base_path / data_type / 'labels' / txt_file
+        shutil.move(str(src_txt), str(dst_txt))
 
 def create_symlinks(files, base_path, data_type):
     for img_file, txt_file in files:
@@ -60,31 +71,37 @@ def clean_up(train_data_path):
         shutil.rmtree(os.path.join(train_data_path, path), ignore_errors=True)
 
 def copy_and_remove_latest_run_files(model_save_path, project_name):
-    list_of_dirs = glob.glob('runs/detect/' + project_name)
+    model_save_path = Path(model_save_path)
+    runs_path = Path('runs/detect') / project_name
+    list_of_dirs = list(Path('runs/detect').glob(project_name))
+    
     if not list_of_dirs:
-        print("No 'runs/detect/" + project_name + "' directories found. Skipping copy and removal.")
+        print(f"No 'runs/detect/{project_name}' directories found. Skipping copy and removal.")
         return
 
-    latest_dir = max(list_of_dirs, key=os.path.getmtime)
+    latest_dir = max(list_of_dirs, key=lambda p: p.stat().st_mtime)
 
-    if os.path.exists(latest_dir):
-        for item in os.listdir(latest_dir):
-            s = os.path.join(latest_dir, item)
-            d = os.path.join(model_save_path, item)
-            if os.path.isdir(s):
-                shutil.copytree(s, d, dirs_exist_ok=True)
+    if latest_dir.exists():
+        for item in latest_dir.iterdir():
+            dest = model_save_path / item.name
+            if item.is_dir():
+                shutil.copytree(str(item), str(dest), dirs_exist_ok=True)
             else:
-                shutil.copy2(s, d)
+                shutil.copy2(str(item), str(dest))
 
-    runs_dir = 'runs'
-    if os.path.exists(runs_dir) and os.path.isdir(runs_dir):
-        shutil.rmtree(runs_dir)
+    runs_dir = Path('runs')
+    if runs_dir.exists() and runs_dir.is_dir():
+        shutil.rmtree(str(runs_dir))
 
 def create_yaml(project_name, train_data_path, class_names, save_directory):
     prepare_data(train_data_path)
 
-    train_path = os.path.join(train_data_path, 'train').replace('\\', '/')
-    val_path = os.path.join(train_data_path, 'val').replace('\\', '/')
+    train_path = str(Path(train_data_path) / 'train')
+    val_path = str(Path(train_data_path) / 'val')
+
+    # Ensure proper path format for YAML
+    train_path = train_path.replace('\\', '/')
+    val_path = val_path.replace('\\', '/')
 
     yaml_content = f"""train: {train_path}
 val: {val_path}
@@ -92,9 +109,10 @@ nc: {len(class_names)}
 names: [{', '.join(f"'{name}'" for name in class_names)}]
 """
     print(f"Project Name: {project_name}")
-    yaml_path = os.path.join(save_directory, f'{project_name}.yaml').replace('\\', '/')
+    yaml_path = str(Path(save_directory) / f'{project_name}.yaml')
     print(f"YAML Path: {yaml_path}")
-    with open(yaml_path, 'w') as file:
+    
+    with open(yaml_path, 'w', encoding='utf-8') as file:
         file.write(yaml_content)
     return yaml_path
 

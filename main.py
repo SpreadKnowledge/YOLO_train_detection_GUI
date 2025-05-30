@@ -10,6 +10,8 @@ import ctypes
 import threading
 import subprocess
 import datetime
+import locale
+from pathlib import Path
 from queue import Queue, Empty
 from src.train import create_yaml
 from src.detect import detect_images
@@ -334,29 +336,34 @@ def show_camera_detection_window():
     image_label.update_idletasks()
     image_label.update()
 
+def normalize_path(path):
+    if not path:
+        return path
+    return str(Path(path).resolve())
+
 def select_train_data():
     global train_data_path
-    train_data_path = filedialog.askdirectory()
+    train_data_path = normalize_path(filedialog.askdirectory())
 
 def select_model_save_folder():
     global model_save_path
-    model_save_path = filedialog.askdirectory()
+    model_save_path = normalize_path(filedialog.askdirectory())
 
 def select_detection_images_folder():
     global detection_images_folder_path
-    detection_images_folder_path = filedialog.askdirectory()
+    detection_images_folder_path = normalize_path(filedialog.askdirectory())
     if detection_images_folder_path:
         print(f"Selected folder: {detection_images_folder_path}")
 
 def select_detection_model():
     global detection_model_path
-    detection_model_path = filedialog.askopenfilename(filetypes=[("YOLOv8 Model", "*.pt")])
+    detection_model_path = normalize_path(filedialog.askopenfilename(filetypes=[("YOLOv8 Model", "*.pt")]))
     if detection_model_path:
         print(f"Selected model: {detection_model_path}")
 
 def select_camera_save_folder():
     global detection_save_dir
-    detection_save_dir = filedialog.askdirectory()
+    detection_save_dir = normalize_path(filedialog.askdirectory())
     if detection_save_dir and camera_detection:
         camera_detection.set_save_directory(detection_save_dir)
         print(f"Selected save folder: {detection_save_dir}")
@@ -453,17 +460,19 @@ def capture_frame(self):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     base_filename = f"{timestamp}_{self.scene_id:04d}"
 
-    origin_image_path = os.path.join(self.save_dir, f"{base_filename}_origin.jpg")
+    # Use pathlib for path handling
+    save_dir_path = Path(self.save_dir)
+    origin_image_path = str(save_dir_path / f"{base_filename}_origin.jpg")
     cv2.imwrite(origin_image_path, frame)
 
     results = self.model(frame)
     self._draw_bounding_boxes(frame, results)
 
-    detection_image_path = os.path.join(self.save_dir, f"{base_filename}_detection.jpg")
+    detection_image_path = str(save_dir_path / f"{base_filename}_detection.jpg")
     cv2.imwrite(detection_image_path, frame)
 
-    txt_path = os.path.join(self.save_dir, f"{base_filename}_detection.txt")
-    with open(txt_path, 'w') as f:
+    txt_path = str(save_dir_path / f"{base_filename}_detection.txt")
+    with open(txt_path, 'w', encoding='utf-8') as f:
         for result in results[0].boxes:
             if result.conf[0] >= self.conf_threshold:
                 x1, y1, x2, y2 = map(int, result.xyxy[0])
