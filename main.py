@@ -11,11 +11,15 @@ import threading
 import subprocess
 import datetime
 import locale
+import mimetypes
 from pathlib import Path
 from queue import Queue, Empty
 from src.train import create_yaml
 from src.detect import detect_images
 from src.camera import CameraDetection
+
+# Initialize mimetypes
+mimetypes.init()
 
 project_name = ""
 train_data_path = ""
@@ -415,7 +419,13 @@ def start_image_detection():
 
 def update_image_list(results_dir):
     global image_paths, current_image_index, detection_progress_bar
-    image_paths = [os.path.join(results_dir, f) for f in os.listdir(results_dir) if f.endswith('.jpg') or f.endswith('.png')]
+    
+    # Find all valid images in the results directory
+    image_paths = []
+    for file_path in Path(results_dir).iterdir():
+        if file_path.is_file() and is_valid_image(str(file_path)):
+            image_paths.append(str(file_path))
+    
     current_image_index = 0
     update_image()
     detection_progress_bar.stop()

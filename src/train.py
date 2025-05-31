@@ -4,8 +4,29 @@ import torch
 import shutil
 import glob
 import random
+import mimetypes
 from pathlib import Path
 from ultralytics import YOLO
+
+VALID_IMAGE_EXTENSIONS = {
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.ppm',
+    '.JPG', '.JPEG', '.PNG', '.GIF', '.BMP', '.WEBP', '.TIFF', '.PPM'
+}
+
+def is_valid_image(file_path):
+    """Check if a file is a valid image by examining extension and mime type"""
+    try:
+        file_path = Path(file_path)
+        
+        # Check file extension
+        if file_path.suffix.lower() not in {ext.lower() for ext in VALID_IMAGE_EXTENSIONS}:
+            return False
+            
+        # Check mime type
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        return mime_type is not None and mime_type.startswith('image/')
+    except Exception:
+        return False
 
 def normalize_path(path):
     if not path:
@@ -25,14 +46,13 @@ def prepare_data(train_data_path):
     for path in ['train/images', 'train/labels', 'val/images', 'val/labels']:
         (train_path / path).mkdir(parents=True, exist_ok=True)
 
-    all_files = set(os.listdir(train_data_path))
+    # Find all valid image files and their corresponding txt files
     paired_files = []
-    for file in all_files:
-        if file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            basename = Path(file).stem
-            txt_file = f"{basename}.txt"
-            if txt_file in all_files:
-                paired_files.append((file, txt_file))
+    for file_path in Path(train_data_path).iterdir():
+        if file_path.is_file() and is_valid_image(str(file_path)):
+            txt_file = file_path.with_suffix('.txt')
+            if txt_file.exists():
+                paired_files.append((file_path.name, txt_file.name))
 
     random.seed(0)
     random.shuffle(paired_files)

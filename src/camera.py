@@ -109,29 +109,30 @@ class CameraDetection:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         base_filename = f"{timestamp}_{self.scene_id:04d}"
 
+        # Use pathlib for path handling
         save_dir_path = Path(self.save_dir)
         
-        origin_image_path = str(save_dir_path / f"{base_filename}_origin.jpg")
-        cv2.imwrite(origin_image_path, frame)
+        # オリジナル画像を保存（PNG形式で保存してクオリティを維持）
+        origin_image_path = str(save_dir_path / f"{base_filename}_origin.png")
+        cv2.imwrite(origin_image_path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 
-        detection_frame = frame.copy()
-        results = self.model(detection_frame)
-        self._draw_bounding_boxes(detection_frame, results)
+        # 検出結果を描画
+        results = self.model(frame)
+        self._draw_bounding_boxes(frame, results)
 
+        # 検出結果画像を保存（JPEG形式で容量を抑える）
         detection_image_path = str(save_dir_path / f"{base_filename}_detection.jpg")
-        cv2.imwrite(detection_image_path, detection_frame)
+        cv2.imwrite(detection_image_path, frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
 
+        # 検出結果のテキストを保存
         txt_path = str(save_dir_path / f"{base_filename}_detection.txt")
         with open(txt_path, 'w', encoding='utf-8') as f:
             for result in results[0].boxes:
                 if result.conf[0] >= self.conf_threshold:
                     x1, y1, x2, y2 = map(int, result.xyxy[0])
-                    class_index = int(result.cls[0])
-                    x_center = (x1 + x2) / (2 * self.original_width)
-                    y_center = (y1 + y2) / (2 * self.original_height)
-                    width = (x2 - x1) / self.original_width
-                    height = (y2 - y1) / self.original_height
-                    f.write(f"{class_index} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
+                    label = self.model.names[int(result.cls[0])]
+                    confidence = result.conf[0]
+                    f.write(f"{label} {confidence:.2f} {x1} {y1} {x2} {y2}\n")
 
         return origin_image_path, detection_image_path, txt_path
 
