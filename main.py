@@ -15,7 +15,7 @@ import mimetypes
 from pathlib import Path
 from queue import Queue, Empty
 from src.train import create_yaml
-from src.detect import detect_images
+from src.detect import detect_images, is_valid_image
 from src.camera import CameraDetection
 
 # Initialize mimetypes
