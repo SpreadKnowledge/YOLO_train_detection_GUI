@@ -162,8 +162,8 @@ def show_ai_train_window():
     model_options = ["YOLOv8-Nano", "YOLOv8-Small", "YOLOv8-Medium", "YOLOv8-Large", "YOLOv8-ExtraLarge", 
                      "YOLOv9-Compact", "YOLOv9-Enhanced",
                      "YOLOv10-Nano", "YOLOv10-Small", "YOLOv10-Medium", "YOLOv10-Balanced", "YOLOv10-Large", "YOLOv10-ExtraLarge",
-                     "YOLOv11-Nano", "YOLOv11-Tiny", "YOLOv11-Medium","YOLOv11-Large","YOLOv11-ExtraLarge",
-                     "YOLOv12-Nano", "YOLOv12-Tiny", "YOLOv12-Medium","YOLOv12-Large","YOLOv12-ExtraLarge"]
+                     "YOLOv11-Nano", "YOLOv11-Small", "YOLOv11-Medium","YOLOv11-Large","YOLOv11-ExtraLarge",
+                     "YOLOv12-Nano", "YOLOv12-Small", "YOLOv12-Medium","YOLOv12-Large","YOLOv12-ExtraLarge"]
     selected_model_var = ctk.StringVar(value=model_options[0])
     border_frame = ctk.CTkFrame(master=main_frame, fg_color="black", width=254, height=44)
     border_frame.place(relx=0.2, rely=0.29, anchor=ctk.CENTER)
