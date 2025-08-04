@@ -17,6 +17,7 @@ from queue import Queue, Empty
 from src.train import create_yaml
 from src.detect import detect_images, is_valid_image
 from src.camera import CameraDetection
+import sys
 
 # Initialize mimetypes
 mimetypes.init()
@@ -114,7 +115,7 @@ def start_training_and_capture_output(yaml_path, selected_model_size):
             return
 
         cmd_args = [
-            'python', 'src/train.py',
+            sys.executable, 'src/train.py', # Use sys.executable to ensure the subprocess uses the same venv interpreter
             project_name, train_data_path, ','.join(class_names),
             model_save_path, selected_model_size, str(input_size),
             str(epochs), yaml_path, str(batch_size)
