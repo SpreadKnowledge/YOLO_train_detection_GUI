@@ -79,7 +79,6 @@ def get_media_files(directory: Union[str, Path]) -> tuple[List[Path], List[Path]
     return sorted(image_files), sorted(video_files)
 
 def process_video(video_path: Path, model, output_dir: Path, conf_threshold: float = 0.5):
-    """Process a video file and save detection results"""
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         print(f"Error opening video file: {video_path}")
@@ -102,47 +101,54 @@ def process_video(video_path: Path, model, output_dir: Path, conf_threshold: flo
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(str(output_video_path), fourcc, fps, (width, height))
 
-    frame_count = 0
-    detection_count = 0
-    
+    frame_count = 0          # 動画全体のフレーム番号
+    detection_count = 0      # 検出があったフレーム数（統計用）
+
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
         # Update progress (every 30 frames to avoid excessive printing)
-        if frame_count % 30 == 0:
+        if frame_count % 30 == 0 and total_frames > 0:
             progress = (frame_count / total_frames) * 100
             print(f"\rProcessing video: {progress:.1f}% ({frame_count}/{total_frames} frames)", end="")
 
         # Detect objects in frame
         results = model.predict(frame, save=False, conf=conf_threshold)
-        
-        # Only process frames with detections above threshold
+
+        # このフレーム用の txt / jpg のパス（フレーム番号で統一）
+        txt_path = video_output_dir / f"frame_{frame_count:04d}.txt"
+
         if len(results[0].boxes) > 0:
-            # Draw bounding boxes
+            # 検出ありフレーム
+
+            # バウンディングボックスを描画したフレーム
             annotated_frame = results[0].plot()
 
-            # Save frame with detections
-            frame_path = video_output_dir / f"frame_{detection_count:04d}.jpg"
-            cv2.imwrite(str(frame_path), annotated_frame)
-
-            # Save detection results to txt
-            txt_path = video_output_dir / f"frame_{detection_count:04d}.txt"
+            # txt を書き込み（1行1検出: label conf x1 y1 x2 y2）
             with open(txt_path, 'w', encoding='utf-8') as f:
                 for box in results[0].boxes:
                     if box.conf[0] >= conf_threshold:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         label = model.names[int(box.cls[0])]
-                        confidence = box.conf[0]
+                        confidence = float(box.conf[0])
                         f.write(f"{label} {confidence:.2f} {x1} {y1} {x2} {y2}\n")
-            
-            detection_count += 1
-            
-            # Write frame to output video
+
+            # 検出ありフレームだけ jpg 保存
+            frame_img_path = video_output_dir / f"frame_{frame_count:04d}.jpg"
+            cv2.imwrite(str(frame_img_path), annotated_frame)
+
+            # 動画には描画済みフレームを書き込む
             out.write(annotated_frame)
+
+            detection_count += 1
         else:
-            # Write original frame to video if no detections
+            # 空の txt を作成（ファイルがあることで「検出なし」が分かる）
+            with open(txt_path, 'w', encoding='utf-8') as f:
+                pass  # 中身は空
+
+            # 動画には元フレームを書き込む
             out.write(frame)
 
         frame_count += 1
@@ -150,10 +156,16 @@ def process_video(video_path: Path, model, output_dir: Path, conf_threshold: flo
     # Clean up
     cap.release()
     out.release()
-    
-    print(f"\nVideo processing complete. {detection_count} frames with detections saved.")
+
+    # 統計情報を表示
+    print("\nVideo processing complete.")
+    print(f"Total frames: {total_frames}")
+    print(f"Frames with detections: {detection_count}")
+    if total_frames > 0:
+        no_detection_frames = total_frames - detection_count
+        print(f"Frames without detections: {no_detection_frames}")
     print(f"Output video saved to: {output_video_path}")
-    
+
     return video_output_dir
 
 def move_detection_results(source_dir, target_dir):
