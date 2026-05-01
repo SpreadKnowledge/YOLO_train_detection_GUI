@@ -1,11 +1,11 @@
 
 # YOLO Train and Detect App “Complete Your Learning and Detection Seamlessly on This GUI”
 
-🎉 **NEW: 2025/05/29 ** We now support YOLOv12! Train and detect with the latest YOLO version. 🎉
+**NEW: 2026/05/01** We now support YOLO26 Detect models! You can select YOLO26n, YOLO26s, YOLO26m, YOLO26l, and YOLO26x from the training GUI.
 
 ![スクリーンショット 2024-05-25 163018](https://github.com/SpreadKnowledge/YOLO_train_detection_GUI/assets/56751392/5ff31879-8756-4561-ad5e-a5f6b0529798)
 
-This application is a user-friendly GUI tool built with PyTorch, Ultralytics library, and CustomTkinter. It allows you to easily develop and train models such as YOLOv12, and perform object detection on images, videos, and webcam feeds using the trained models. The detection results can be saved for further analysis.
+This application is a user-friendly GUI tool built with PyTorch, Ultralytics library, and CustomTkinter. It allows you to easily develop and train models such as YOLO26 and YOLO12, and perform object detection on images, videos, and webcam feeds using the trained models. The detection results can be saved for further analysis.
 
 ↓ Please watch the instructional video (in English) uploaded on YouTube to check out the specific operation.
 [![YOLO Train and Detect App Demo](https://img.youtube.com/vi/Jk-JkBn4Na0/0.jpg)](https://youtu.be/Jk-JkBn4Na0?si=hMqGkJ4YAjnaKbQW)
@@ -41,6 +41,11 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
+If YOLO26 models are not recognized, please upgrade Ultralytics:
+```bash
+pip install -U ultralytics
+```
+
 ### Using Anaconda
 
 1. Clone this repository:
@@ -62,6 +67,11 @@ conda activate yolo-app
 5. Install the required dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+If YOLO26 models are not recognized, please upgrade Ultralytics:
+```bash
+pip install -U ultralytics
 ```
 
 ## Preparing Training Data
@@ -92,7 +102,7 @@ In the Train tab, you can train your own YOLO model:
 1. Enter a project name (alphanumeric only).
 2. Select the directory containing your training data (images and annotation text files).
 3. Choose the directory where you want to save the trained model.
-4. Select the model size for YOLOv9 (Compact or Enhanced) or YOLOv8 (Nano, Small, Medium, Large, or ExtraLarge).
+4. Choose a YOLO model from the scrollable model selection window. Supported models include YOLOv8, YOLOv9, YOLOv10, YOLO11, YOLO12, and YOLO26 Detect models.
 5. Specify the input size for the CNN (e.g., 640).
 6. Set the number of epochs for training (e.g., 100).
 7. Enter the batch size for training (e.g., 16).

@@ -33,6 +33,51 @@ image_paths = []
 current_image_index = 0
 image_label = None
 selected_model_var = None
+selected_model_label = None
+class_names_text = None
+class_numbers_text = None
+
+MODEL_OPTIONS = [
+    ("YOLO26-Nano", "yolo26n"),
+    ("YOLO26-Small", "yolo26s"),
+    ("YOLO26-Medium", "yolo26m"),
+    ("YOLO26-Large", "yolo26l"),
+    ("YOLO26-ExtraLarge", "yolo26x"),
+    ("YOLO12-Nano", "yolo12n"),
+    ("YOLO12-Small", "yolo12s"),
+    ("YOLO12-Medium", "yolo12m"),
+    ("YOLO12-Large", "yolo12l"),
+    ("YOLO12-ExtraLarge", "yolo12x"),
+    ("YOLO11-Nano", "yolo11n"),
+    ("YOLO11-Small", "yolo11s"),
+    ("YOLO11-Medium", "yolo11m"),
+    ("YOLO11-Large", "yolo11l"),
+    ("YOLO11-ExtraLarge", "yolo11x"),
+    ("YOLOv10-Nano", "yolov10n"),
+    ("YOLOv10-Small", "yolov10s"),
+    ("YOLOv10-Medium", "yolov10m"),
+    ("YOLOv10-Balanced", "yolov10b"),
+    ("YOLOv10-Large", "yolov10l"),
+    ("YOLOv10-ExtraLarge", "yolov10x"),
+    ("YOLOv9-Compact", "yolov9c"),
+    ("YOLOv9-Enhanced", "yolov9e"),
+    ("YOLOv8-Nano", "yolov8n"),
+    ("YOLOv8-Small", "yolov8s"),
+    ("YOLOv8-Medium", "yolov8m"),
+    ("YOLOv8-Large", "yolov8l"),
+    ("YOLOv8-ExtraLarge", "yolov8x"),
+]
+MODEL_NAME_TO_TYPE = dict(MODEL_OPTIONS)
+MODEL_DISPLAY_NAMES = [model_name for model_name, _ in MODEL_OPTIONS]
+MODEL_FAMILY_COLORS = {
+    "YOLO26": ("#e8f3ff", "#d6e9ff", "#7aaedf"),
+    "YOLO12": ("#edf7ed", "#dff0df", "#7dbb7d"),
+    "YOLO11": ("#fff3e6", "#ffe7cc", "#d5a060"),
+    "YOLOv10": ("#f2edff", "#e5dcff", "#a48bd9"),
+    "YOLOv9": ("#fff8dc", "#fff0b8", "#c9a84e"),
+    "YOLOv8": ("#f0f0f0", "#e2e2e2", "#a5a5a5"),
+}
+CLASS_INPUT_FONT = ("Roboto Medium", 18)
 
 global start_train_button, detection_progress_bar, image_index_label, camera_detection, detection_model_path, detection_save_dir, camera_id_entry
 
@@ -77,6 +122,65 @@ def update_output_textbox():
     finally:
         root.after(100, update_output_textbox)
 
+def get_model_family(model_name):
+    return model_name.split("-", 1)[0]
+
+def update_class_numbers(event=None):
+    if class_names_text is None or class_numbers_text is None:
+        return
+
+    text = class_names_text.get("1.0", "end-1c")
+    line_count = max(1, text.count("\n") + 1)
+    class_numbers = "\n".join(f"Class {line_number}" for line_number in range(line_count))
+
+    try:
+        top_position = class_names_text.yview()[0]
+    except tk.TclError:
+        top_position = 0
+
+    class_numbers_text.configure(state="normal")
+    class_numbers_text.delete("1.0", "end")
+    class_numbers_text.insert("1.0", class_numbers)
+    class_numbers_text.configure(state="disabled")
+    class_numbers_text.yview_moveto(top_position)
+
+def schedule_class_numbers_update(event=None):
+    root.after(1, update_class_numbers)
+
+def handle_class_names_modified(event=None):
+    text_widget = event.widget if event is not None else getattr(class_names_text, "_textbox", None)
+    if text_widget is not None:
+        try:
+            text_widget.edit_modified(False)
+        except (AttributeError, tk.TclError):
+            pass
+    schedule_class_numbers_update()
+
+def bind_class_name_textbox_events():
+    text_widgets = [class_names_text]
+    inner_textbox = getattr(class_names_text, "_textbox", None)
+    if inner_textbox is not None:
+        text_widgets.append(inner_textbox)
+    inner_numbers_textbox = getattr(class_numbers_text, "_textbox", None)
+
+    for text_widget in (inner_textbox, inner_numbers_textbox):
+        if text_widget is None:
+            continue
+        text_widget.configure(font=CLASS_INPUT_FONT, spacing1=0, spacing2=0, spacing3=0)
+
+    for text_widget in text_widgets:
+        text_widget.bind("<<Modified>>", handle_class_names_modified)
+        text_widget.bind("<KeyPress>", schedule_class_numbers_update)
+        text_widget.bind("<KeyRelease>", schedule_class_numbers_update)
+        text_widget.bind("<<Paste>>", schedule_class_numbers_update)
+        text_widget.bind("<<Cut>>", schedule_class_numbers_update)
+        text_widget.bind("<ButtonRelease-1>", schedule_class_numbers_update)
+        text_widget.bind("<MouseWheel>", schedule_class_numbers_update)
+        try:
+            text_widget.edit_modified(False)
+        except (AttributeError, tk.TclError):
+            pass
+
 def update_image():
     global current_image_index, image_label, image_paths, image_index_label
     if image_paths:
@@ -115,7 +219,7 @@ def start_training_and_capture_output(yaml_path, selected_model_size):
             return
 
         cmd_args = [
-            sys.executable, 'src/train.py', # Use sys.executable to ensure the subprocess uses the same venv interpreter
+            sys.executable, 'src/train.py',
             project_name, train_data_path, ','.join(class_names),
             model_save_path, selected_model_size, str(input_size),
             str(epochs), yaml_path, str(batch_size)
@@ -137,8 +241,65 @@ def start_training_and_capture_output(yaml_path, selected_model_size):
     threading.Thread(target=run_training, daemon=True).start()
     progress_bar.start()
 
+def open_model_selection_window():
+    global selected_model_var, selected_model_label
+
+    if selected_model_var is None:
+        return
+
+    model_window = ctk.CTkToplevel(root)
+    model_window.title("Select YOLO Model")
+    model_window.geometry("360x520")
+    model_window.transient(root)
+    model_window.grab_set()
+
+    ctk.CTkLabel(
+        master=model_window,
+        text="Select YOLO Model",
+        font=("Roboto Medium", 20, "bold")
+    ).pack(padx=16, pady=(16, 8), anchor="w")
+
+    scrollable_frame = ctk.CTkScrollableFrame(master=model_window, width=320, height=400)
+    scrollable_frame.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+
+    def select_model(model_name):
+        selected_model_var.set(model_name)
+        if selected_model_label is not None and selected_model_label.winfo_exists():
+            selected_model_label.configure(text=model_name)
+        model_window.destroy()
+
+    current_family = None
+    for model_name in MODEL_DISPLAY_NAMES:
+        family = get_model_family(model_name)
+        fg_color, hover_color, border_color = MODEL_FAMILY_COLORS.get(
+            family, ("#f4f4f4", "#e8e8e8", "#b0b0b0")
+        )
+
+        if family != current_family:
+            current_family = family
+            ctk.CTkLabel(
+                master=scrollable_frame,
+                text=family,
+                font=("Roboto Medium", 14, "bold"),
+                text_color="#444444",
+            ).pack(fill="x", padx=8, pady=(12, 2), anchor="w")
+
+        model_button = ctk.CTkButton(
+            master=scrollable_frame,
+            text=model_name,
+            command=lambda name=model_name: select_model(name),
+            fg_color=fg_color,
+            hover_color=hover_color,
+            border_color=border_color,
+            border_width=1,
+            font=("Roboto Medium", 16),
+            text_color="black",
+            height=36,
+        )
+        model_button.pack(fill="x", padx=6, pady=4)
+
 def show_ai_train_window():
-    global project_name_entry, input_size_entry, epochs_entry, batch_size_entry, class_names_text, progress_bar, output_textbox, start_train_button, selected_model_var
+    global project_name_entry, input_size_entry, epochs_entry, batch_size_entry, class_names_text, class_numbers_text, progress_bar, output_textbox, start_train_button, selected_model_var, selected_model_label
 
     main_frame.pack_forget()
     main_frame.pack(fill="both", expand=True)
@@ -160,27 +321,29 @@ def show_ai_train_window():
 
     # モデル選択ドロップダウン
     ctk.CTkLabel(master=main_frame, text="Select YOLO Model: YOLOのモデル選択", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.26, anchor=ctk.CENTER)
-    model_options = ["YOLOv8-Nano", "YOLOv8-Small", "YOLOv8-Medium", "YOLOv8-Large", "YOLOv8-ExtraLarge", 
-                     "YOLOv9-Compact", "YOLOv9-Enhanced",
-                     "YOLOv10-Nano", "YOLOv10-Small", "YOLOv10-Medium", "YOLOv10-Balanced", "YOLOv10-Large", "YOLOv10-ExtraLarge",
-                     "YOLOv11-Nano", "YOLOv11-Small", "YOLOv11-Medium","YOLOv11-Large","YOLOv11-ExtraLarge",
-                     "YOLOv12-Nano", "YOLOv12-Small", "YOLOv12-Medium","YOLOv12-Large","YOLOv12-ExtraLarge"]
-    selected_model_var = ctk.StringVar(value=model_options[0])
+    selected_model_var = ctk.StringVar(value=MODEL_DISPLAY_NAMES[0])
     border_frame = ctk.CTkFrame(master=main_frame, fg_color="black", width=254, height=44)
     border_frame.place(relx=0.2, rely=0.29, anchor=ctk.CENTER)
-    model_menu = ctk.CTkOptionMenu(
+    selected_model_label = ctk.CTkLabel(
         master=border_frame,
-        variable=selected_model_var,
-        values=model_options,
         font=("Roboto Medium", 18),
-        dropdown_font=("Roboto Medium", 18),
-        button_color="white",
-        button_hover_color="lightgray",
-        dropdown_hover_color="lightgray",
+        text=selected_model_var.get(),
+        fg_color="white",
+        text_color="black",
         width=250,
         height=40,
     )
-    model_menu.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+    selected_model_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+    select_model_button = ctk.CTkButton(
+        master=main_frame,
+        text="Select YOLO Model",
+        command=open_model_selection_window,
+        border_color="black",
+        border_width=2,
+        font=("Roboto Medium", 20),
+        text_color="white",
+    )
+    select_model_button.place(relx=0.2, rely=0.34, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # CNNの入力層のサイズ指定
     ctk.CTkLabel(master=main_frame, text="CNN Input Size: CNNの入力層のサイズ 【Ex: 640】", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.39, anchor=ctk.CENTER)
@@ -198,9 +361,36 @@ def show_ai_train_window():
     batch_size_entry.place(relx=0.2, rely=0.56, relwidth=0.3, relheight=0.04, anchor=ctk.CENTER)
 
     # クラス名入力ウィンドウ
-    ctk.CTkLabel(master=main_frame, text="Class name: クラス名", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.60, anchor=ctk.CENTER)
-    class_names_text = ctk.CTkTextbox(master=main_frame, font=("Roboto Medium", 18))
-    class_names_text.place(relx=0.2, rely=0.7, relwidth=0.3, relheight=0.17,  anchor=ctk.CENTER)
+    ctk.CTkLabel(master=main_frame, text="Class names: クラス名 (1 line = 1 class)", font=("Roboto Medium", 18)).place(relx=0.2, rely=0.60, anchor=ctk.CENTER)
+    class_input_frame = ctk.CTkFrame(
+        master=main_frame,
+        fg_color="white",
+        border_color="#b8b8b8",
+        border_width=1,
+        corner_radius=6,
+    )
+    class_input_frame.place(relx=0.2, rely=0.7, relwidth=0.3, relheight=0.17, anchor=ctk.CENTER)
+    class_numbers_text = ctk.CTkTextbox(
+        master=class_input_frame,
+        width=82,
+        font=CLASS_INPUT_FONT,
+        fg_color="#f7f7f7",
+        text_color="#9a9a9a",
+        border_width=0,
+        wrap="none",
+        activate_scrollbars=False,
+    )
+    class_numbers_text.pack(side="left", fill="y", padx=(4, 0), pady=4)
+    class_names_text = ctk.CTkTextbox(
+        master=class_input_frame,
+        font=CLASS_INPUT_FONT,
+        fg_color="white",
+        border_width=0,
+        wrap="none",
+    )
+    class_names_text.pack(side="left", fill="both", expand=True, padx=(0, 4), pady=4)
+    bind_class_name_textbox_events()
+    update_class_numbers()
 
     # 学習開始ボタン
     start_train_button = ctk.CTkButton(master=main_frame, text="Start Training!", command=start_training, fg_color="chocolate1",border_color='black', border_width=3, font=("Roboto Medium", 44, "bold"), text_color='white')
@@ -387,14 +577,7 @@ def animate_progress_bar(progress, step):
     root.after(50, animate_progress_bar, progress + step, step)
 
 def model_name_to_type(model_name):
-    model_map = {
-        "YOLOv8-Nano": "yolov8n", "YOLOv8-Small": "yolov8s", "YOLOv8-Medium": "yolov8m", "YOLOv8-Large": "yolov8l", "YOLOv8-ExtraLarge": "yolov8x",
-        "YOLOv9-Compact": "yolov9c", "YOLOv9-Enhanced": "yolov9e",
-        "YOLOv10-Nano": "yolov10n", "YOLOv10-Small": "yolov10s", "YOLOv10-Medium": "yolov10m", "YOLOv10-Balanced": "yolov10b", "YOLOv10-Large": "yolov10l", "YOLOv10-ExtraLarge": "yolov10x",
-        "YOLOv11-Nano": "yolo11n", "YOLOv11-Small": "yolo11s", "YOLOv11-Medium": "yolo11m", "YOLOv11-Large": "yolo11l", "YOLOv11-ExtraLarge": "yolo11x",
-        "YOLOv12-Nano": "yolo12n", "YOLOv12-Small": "yolo12s", "YOLOv12-Medium": "yolo12m", "YOLOv12-Large": "yolo12l", "YOLOv12-ExtraLarge": "yolo12x",
-    }
-    return model_map.get(model_name, "")
+    return MODEL_NAME_TO_TYPE.get(model_name, "")
 
 def start_training():
     global project_name, train_data_path, model_save_path, selected_model_var, input_size, epochs, batch_size, class_names
@@ -521,11 +704,15 @@ object_detection_button.pack(pady=10)
 camera_detection_button = ctk.CTkButton(master=sidebar, text="Camera", command=lambda: on_sidebar_select("Camera Detection"), fg_color="chocolate1", text_color="white", border_color='black', border_width=2, font=("Roboto Medium", 20))
 camera_detection_button.pack(pady=10)
 
-app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv12", font=("Roboto Medium", 16))
+app_name_label = ctk.CTkLabel(master=sidebar, text="YOLO26", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)
 app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)
-app_name_label = ctk.CTkLabel(master=sidebar, text="YOLOv11", font=("Roboto Medium", 16))
+app_name_label = ctk.CTkLabel(master=sidebar, text="YOLO12", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
+app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 16))
+app_name_label.pack(pady=1)
+app_name_label = ctk.CTkLabel(master=sidebar, text="YOLO11", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)
 app_name_label = ctk.CTkLabel(master=sidebar, text="&", font=("Roboto Medium", 16))
 app_name_label.pack(pady=1)

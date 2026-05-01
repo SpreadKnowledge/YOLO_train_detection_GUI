@@ -7,6 +7,7 @@ import random
 import mimetypes
 from pathlib import Path
 from ultralytics import YOLO
+import ultralytics
 
 VALID_IMAGE_EXTENSIONS = {
     '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.ppm',
@@ -138,7 +139,17 @@ names: [{', '.join(f"'{name}'" for name in class_names)}]
 
 def train_yolo(data_yaml, model_type, img_size, batch, epochs, model_save_path, project_name):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = YOLO(f'{model_type}.pt').to(device)
+    model_file = f'{model_type}.pt'
+    try:
+        model = YOLO(model_file).to(device)
+    except FileNotFoundError as exc:
+        print(
+            f"Model file '{model_file}' was not found, and Ultralytics "
+            f"{ultralytics.__version__} did not auto-download it."
+        )
+        print("If this is a YOLO26 model, upgrade Ultralytics and try again:")
+        print(f"{sys.executable} -m pip install -U ultralytics")
+        raise exc
     results = model.train(data=data_yaml, epochs=epochs, batch=batch, imgsz=img_size, name=project_name, save=True)
     copy_and_remove_latest_run_files(model_save_path, project_name)
     clean_up(os.path.dirname(data_yaml))
