@@ -1,13 +1,17 @@
 import os
 import sys
-import torch
 import shutil
-import glob
 import random
 import mimetypes
+import time
+import json
 from pathlib import Path
-from ultralytics import YOLO
-import ultralytics
+
+os.environ.setdefault("YOLO_CONFIG_DIR", str(Path.cwd() / ".ultralytics"))
+if __package__ in {None, ""}:
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from src.system_report import write_environment_report
 
 VALID_IMAGE_EXTENSIONS = {
     '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.ppm',
@@ -42,7 +46,7 @@ def prepare_data(train_data_path):
 
     if train_dir_exists and val_dir_exists:
         print("Train and validation directories already exist. Skipping file preparation.")
-        return
+        return False
 
     for path in ['train/images', 'train/labels', 'val/images', 'val/labels']:
         (train_path / path).mkdir(parents=True, exist_ok=True)
@@ -63,19 +67,19 @@ def prepare_data(train_data_path):
 
     move_files(train_files, train_data_path, 'train')
     move_files(val_files, train_data_path, 'val')
+    (train_path / ".yolo_gui_prepared").write_text("created by YOLO GUI\n", encoding="utf-8")
+    return True
 
 def move_files(files, base_path, data_type):
     base_path = Path(base_path)
     for img_file, txt_file in files:
-        # Move image file
         src_img = base_path / img_file
         dst_img = base_path / data_type / 'images' / img_file
-        shutil.move(str(src_img), str(dst_img))
+        shutil.copy2(str(src_img), str(dst_img))
 
-        # Move label file
         src_txt = base_path / txt_file
         dst_txt = base_path / data_type / 'labels' / txt_file
-        shutil.move(str(src_txt), str(dst_txt))
+        shutil.copy2(str(src_txt), str(dst_txt))
 
 def create_symlinks(files, base_path, data_type):
     for img_file, txt_file in files:
@@ -88,31 +92,40 @@ def create_symlinks(files, base_path, data_type):
         os.symlink(src_txt_path, dst_txt_path)
 
 def clean_up(train_data_path):
+    marker = Path(train_data_path) / ".yolo_gui_prepared"
+    if not marker.exists():
+        return
     for path in ['train', 'val']:
         shutil.rmtree(os.path.join(train_data_path, path), ignore_errors=True)
+    marker.unlink(missing_ok=True)
 
-def copy_and_remove_latest_run_files(model_save_path, project_name):
+def _destination_dir(model_save_path, project_name):
     model_save_path = Path(model_save_path)
-    runs_path = Path('runs/detect') / project_name
-    list_of_dirs = list(Path('runs/detect').glob(project_name))
-    
-    if not list_of_dirs:
-        print(f"No 'runs/detect/{project_name}' directories found. Skipping copy and removal.")
-        return
+    model_save_path.mkdir(parents=True, exist_ok=True)
+    if model_save_path.name == project_name:
+        return model_save_path
+    return model_save_path / project_name
 
-    latest_dir = max(list_of_dirs, key=lambda p: p.stat().st_mtime)
 
-    if latest_dir.exists():
-        for item in latest_dir.iterdir():
-            dest = model_save_path / item.name
-            if item.is_dir():
-                shutil.copytree(str(item), str(dest), dirs_exist_ok=True)
-            else:
-                shutil.copy2(str(item), str(dest))
+def copy_training_run_files(run_dir, model_save_path, project_name):
+    run_dir = Path(run_dir)
+    if not run_dir.exists():
+        raise FileNotFoundError(f"Training run directory was not found: {run_dir}")
 
-    runs_dir = Path('runs')
-    if runs_dir.exists() and runs_dir.is_dir():
-        shutil.rmtree(str(runs_dir))
+    destination = _destination_dir(model_save_path, project_name)
+    destination.mkdir(parents=True, exist_ok=True)
+
+    if run_dir.resolve() == destination.resolve():
+        return destination
+
+    for item in run_dir.iterdir():
+        dest = destination / item.name
+        if item.is_dir():
+            shutil.copytree(str(item), str(dest), dirs_exist_ok=True)
+        else:
+            shutil.copy2(str(item), str(dest))
+
+    return destination
 
 def create_yaml(project_name, train_data_path, class_names, save_directory):
     prepare_data(train_data_path)
@@ -127,7 +140,7 @@ def create_yaml(project_name, train_data_path, class_names, save_directory):
     yaml_content = f"""train: {train_path}
 val: {val_path}
 nc: {len(class_names)}
-names: [{', '.join(f"'{name}'" for name in class_names)}]
+names: {json.dumps(class_names, ensure_ascii=False)}
 """
     print(f"Project Name: {project_name}")
     yaml_path = str(Path(save_directory) / f'{project_name}.yaml')
@@ -137,8 +150,18 @@ names: [{', '.join(f"'{name}'" for name in class_names)}]
         file.write(yaml_content)
     return yaml_path
 
-def train_yolo(data_yaml, model_type, img_size, batch, epochs, model_save_path, project_name):
+def train_yolo(data_yaml, model_type, img_size, batch, epochs, model_save_path, project_name, train_data_path=None):
+    import torch
+    import ultralytics
+    from ultralytics import YOLO
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"GUI_DEVICE device={device} torch_cuda={torch.version.cuda} cudnn={torch.backends.cudnn.version()}", flush=True)
+    if torch.cuda.is_available():
+        print(f"Using GPU: {torch.cuda.get_device_name(0)}", flush=True)
+    else:
+        print("Using CPU: CUDA GPU was not detected by PyTorch.", flush=True)
+
     model_file = f'{model_type}.pt'
     try:
         model = YOLO(model_file).to(device)
@@ -150,9 +173,52 @@ def train_yolo(data_yaml, model_type, img_size, batch, epochs, model_save_path, 
         print("If this is a YOLO26 model, upgrade Ultralytics and try again:")
         print(f"{sys.executable} -m pip install -U ultralytics")
         raise exc
-    results = model.train(data=data_yaml, epochs=epochs, batch=batch, imgsz=img_size, name=project_name, save=True)
-    copy_and_remove_latest_run_files(model_save_path, project_name)
-    clean_up(os.path.dirname(data_yaml))
+
+    start_time = time.time()
+
+    def report_epoch_progress(trainer):
+        completed = int(getattr(trainer, "epoch", 0)) + 1
+        total = int(getattr(trainer, "epochs", epochs))
+        elapsed = max(time.time() - start_time, 0.1)
+        eta = max(total - completed, 0) * (elapsed / max(completed, 1))
+        print(
+            f"GUI_PROGRESS epoch={completed} total={total} "
+            f"elapsed={elapsed:.1f} eta={eta:.1f}",
+            flush=True,
+        )
+
+    model.add_callback("on_fit_epoch_end", report_epoch_progress)
+    results = model.train(
+        data=data_yaml,
+        epochs=epochs,
+        batch=batch,
+        imgsz=img_size,
+        project=str(Path("runs") / "detect"),
+        name=project_name,
+        save=True,
+        device=device,
+    )
+
+    run_dir = Path(getattr(model.trainer, "save_dir", ""))
+    destination = copy_training_run_files(run_dir, model_save_path, project_name)
+    data_yaml_path = Path(data_yaml)
+    yaml_destination = destination / data_yaml_path.name
+    if data_yaml_path.exists() and data_yaml_path.resolve() != yaml_destination.resolve():
+        shutil.copy2(str(data_yaml_path), str(yaml_destination))
+    report_path = write_environment_report(destination)
+
+    weights_dir = destination / "weights"
+    best_weight = weights_dir / "best.pt"
+    last_weight = weights_dir / "last.pt"
+    if best_weight.exists() or last_weight.exists():
+        print(f"GUI_ARTIFACT weights={best_weight if best_weight.exists() else last_weight}", flush=True)
+    else:
+        print(f"WARNING: Weight files were not found in {weights_dir}", flush=True)
+    print(f"GUI_ARTIFACT environment={report_path}", flush=True)
+    print(f"Training output copied to: {destination}", flush=True)
+
+    if train_data_path:
+        clean_up(train_data_path)
     return results
 
 def parse_args():
@@ -166,7 +232,16 @@ def parse_args():
     yaml_path = sys.argv[8]
     batch_size = int(sys.argv[9])
 
-    results = train_yolo(yaml_path, model_type, img_size, batch_size, epochs, model_save_path, project_name)
+    results = train_yolo(
+        yaml_path,
+        model_type,
+        img_size,
+        batch_size,
+        epochs,
+        model_save_path,
+        project_name,
+        train_data_path,
+    )
     print(f"Training completed. Model saved to {model_save_path}")
 
 if __name__ == '__main__':

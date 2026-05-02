@@ -3,9 +3,12 @@ import os
 import cv2
 import mimetypes
 from pathlib import Path
-from ultralytics import YOLO
 from typing import List, Union
 from datetime import datetime
+
+os.environ.setdefault("YOLO_CONFIG_DIR", str(Path.cwd() / ".ultralytics"))
+
+from ultralytics import YOLO
 
 VALID_IMAGE_EXTENSIONS = {
     '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.ppm',
@@ -182,7 +185,7 @@ def move_detection_results(source_dir, target_dir):
     # Clean up source directory
     shutil.rmtree(str(source_dir))
 
-def detect_images(images_folder, model_path, callback=None):
+def detect_images(images_folder, model_path, callback=None, progress_callback=None, conf_threshold=0.5):
     model = YOLO(model_path)
     
     # Find all valid images and videos in the folder
@@ -190,25 +193,39 @@ def detect_images(images_folder, model_path, callback=None):
     image_files, video_files = get_media_files(images_folder)
     
     if not image_files and not video_files:
-        print("No valid media files found in the directory")
-        return
+        message = "No valid media files found in the directory"
+        print(message)
+        if progress_callback:
+            progress_callback(message)
+        raise ValueError(message)
 
-    results_dir = Path(images_folder) / 'results'
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_dir = Path(images_folder) / 'results' / timestamp
     results_dir.mkdir(parents=True, exist_ok=True)
+    if progress_callback:
+        progress_callback(f"Output: {results_dir}")
 
     # Process images
     if image_files:
-        # Convert Path objects to strings for YOLO predict
+        if progress_callback:
+            progress_callback(f"Processing {len(image_files)} image file(s).")
         image_paths = [str(path) for path in image_files]
-        results = model.predict(image_paths, save=True, save_txt=True, imgsz=640, conf=0.5)
-        
-        runs_dir = Path('runs/detect')
-        latest_run_dir = max(runs_dir.glob('*'), key=lambda p: p.stat().st_mtime)
-        move_detection_results(latest_run_dir, results_dir)
+        model.predict(
+            image_paths,
+            save=True,
+            save_txt=True,
+            imgsz=640,
+            conf=conf_threshold,
+            project=str(results_dir),
+            name="images",
+            exist_ok=True,
+        )
 
     # Process videos
-    for video_file in video_files:
-        process_video(video_file, model, results_dir)
+    for index, video_file in enumerate(video_files, start=1):
+        if progress_callback:
+            progress_callback(f"Processing video {index}/{len(video_files)}: {video_file.name}")
+        process_video(video_file, model, results_dir, conf_threshold=conf_threshold)
 
     if callback:
         callback(str(results_dir))

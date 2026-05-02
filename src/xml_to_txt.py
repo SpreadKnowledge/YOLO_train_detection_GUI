@@ -5,14 +5,14 @@ import os
 import xml.etree.ElementTree as ET
 
 
-xml_dir = r"C:\Users\he81t\ubuntu\yamaguchi\fukuoka_chicken\original_data\Annotations_pascal_xml"  # XMLファイルがあるディレクトリ
-txt_dir = r"C:\Users\he81t\ubuntu\yamaguchi\fukuoka_chicken\original_data\Annotations_yolo_txt"    # YOLO形式のtxtファイルを出力するディレクトリ
+xml_dir = "PATH/TO/YOUR/XML/DIRECTORY"  # XMLファイルがあるディレクトリ
+txt_dir = "PATH/TO/YOUR/TXT/DIRECTORY"  # YOLO形式のtxtファイルを出力するディレクトリ
 
 if not os.path.exists(txt_dir):
     os.makedirs(txt_dir)
 
 # クラス一覧を格納するリスト
-classes = []
+classes = ["hiyoko", "niwatori"]
 
 # xml_dir 内のファイルを走査
 for filename in os.listdir(xml_dir):

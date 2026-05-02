@@ -12,8 +12,8 @@ import random
 from typing import Dict, List, Tuple
 
 # 評価用のパラメータ設定
-DATASET_DIR = r"C:\Users\he81t\ubuntu\images\green_soybeans\shonai1_test_data"  # データセットのディレクトリ
-MODEL_PATH = r"C:\Users\he81t\ubuntu\images\green_soybeans\shonai3_models\weights\best.pt"  # YOLOモデルのパス
+DATASET_DIR = "PATH/TO/YOUR/DIRECTRY"  # データセットのディレクトリ
+MODEL_PATH = "PATH/TO/YOUR/MODEL"  # YOLOモデルのパス
 CONF_THRESHOLD = 0.5  # 確信度のしきい値
 
 def create_output_dirs():

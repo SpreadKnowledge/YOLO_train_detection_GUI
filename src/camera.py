@@ -3,10 +3,13 @@ import threading
 import time
 import os
 from pathlib import Path
-from ultralytics import YOLO
 import torch
 from datetime import datetime
 from PIL import Image, ImageTk
+
+os.environ.setdefault("YOLO_CONFIG_DIR", str(Path.cwd() / ".ultralytics"))
+
+from ultralytics import YOLO
 
 def normalize_path(path):
     if not path:
@@ -58,17 +61,27 @@ class CameraDetection:
             img = self._resize_image_to_fit(img, display_label.winfo_width(), display_label.winfo_height())
             img = Image.fromarray(img)
 
-            img = ImageTk.PhotoImage(image=img)
-            display_label.config(image=img)
-            display_label.image = img
-
-            display_label.update_idletasks()
-            display_label.update()
+            try:
+                display_label.after(0, self._display_frame, display_label, img)
+            except Exception:
+                break
 
             time.sleep(0.03)
 
+    def _display_frame(self, display_label, pil_image):
+        if not self.running:
+            return
+        try:
+            photo = ImageTk.PhotoImage(image=pil_image)
+            display_label.configure(image=photo, text="")
+            display_label.image = photo
+        except Exception:
+            self.running = False
+
     def _resize_image_to_fit(self, image, max_width, max_height):
         height, width = image.shape[:2]
+        max_width = max(int(max_width), 1)
+        max_height = max(int(max_height), 1)
         aspect_ratio = width / height
 
         if aspect_ratio > max_width / max_height:
@@ -100,6 +113,8 @@ class CameraDetection:
     def capture_frame(self):
         if not self.cap:
             return
+        if not self.save_dir:
+            return
 
         ret, frame = self.cap.read()
         if not ret:
@@ -111,6 +126,7 @@ class CameraDetection:
 
         # Use pathlib for path handling
         save_dir_path = Path(self.save_dir)
+        save_dir_path.mkdir(parents=True, exist_ok=True)
         
         # オリジナル画像を保存（PNG形式で保存してクオリティを維持）
         origin_image_path = str(save_dir_path / f"{base_filename}_origin.png")
