@@ -1,5 +1,3 @@
-!!
-
 # YOLO Train and Detect GUI
 
 This is a desktop GUI app for training YOLO models such as YOLO26, YOLO12, YOLO11, YOLOv10, YOLOv9, and YOLOv8, then running inference on images, videos, or a camera from the same application.
