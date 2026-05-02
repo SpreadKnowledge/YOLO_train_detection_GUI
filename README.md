@@ -1,8 +1,14 @@
+!!
+
 # YOLO Train and Detect GUI
 
 This is a desktop GUI app for training YOLO models such as YOLO26, YOLO12, YOLO11, YOLOv10, YOLOv9, and YOLOv8, then running inference on images, videos, or a camera from the same application.
 
 The app is built with CustomTkinter, PyTorch, Ultralytics, OpenCV, and Pillow.
+
+<img width="2362" height="740" alt="スクリーンショット 2026-05-02 145213" src="https://github.com/user-attachments/assets/01207c37-0a9d-4a3d-a2ea-6c36053befa0" />
+
+https://youtu.be/Jk-JkBn4Na0?si=3qG5Ev82_yoJZp7x
 
 ## Setup
 
